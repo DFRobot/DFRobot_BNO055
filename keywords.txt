@@ -1,0 +1,36 @@
+#######################################
+# Syntax Coloring BNO055
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+DFRobot_BNO055	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+init	KEYWORD2
+readEuler	KEYWORD2
+setMode	KEYWORD2
+getInfo	KEYWORD2
+readLinAcc	KEYWORD2
+readQua	KEYWORD2
+calcAbsLinAcc	KEYWORD2
+EulerAngles	KEYWORD2
+LinAccData	KEYWORD2
+QuaData	KEYWORD2
+AbsLinAccData	KEYWORD2
+SystemStatusCode	KEYWORD2
+SelfTestStatus	KEYWORD2
+SystemError	KEYWORD2
+
+eNORMAL_POWER_MODE	KEYWORD2
+eLOW_POWER_MODE	KEYWORD2
+eSUSPEND_POWER_MODE	KEYWORD2
+eFASTEST_MODE	KEYWORD2
+eGAME_MODE	KEYWORD2
+eUI_MODE	KEYWORD2
+eNORMAL_MODE	KEYWORD2
