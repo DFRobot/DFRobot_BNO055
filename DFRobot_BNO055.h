@@ -68,6 +68,12 @@ class DFRobot_BNO055
  */
     void readEuler(void);
 /*
+ * @brief  Read angles velocity.
+ *         The resulting data is stored in GyrData.
+ *         For exmple: GyrData.x, GyrData.y, GyrData.z
+ */
+    void readAngularVelocity(void);
+/*
  * @brief  Read linear acceleration.
  *         The resulting data is stored in LinAccData.
  *         For exmple: LinAccData.x, LinAccData.y, LinAccData.z
@@ -220,7 +226,14 @@ class DFRobot_BNO055
       float y;
       float z;
     } BNO055EulerData;
-    
+
+    typedef struct BNO055GyrData_s
+    {
+      float x;
+      float y;
+      float z;
+    } BNO055GyrData;
+
     typedef struct BNO055LinAccData_s
     {
         float x;
@@ -244,6 +257,7 @@ class DFRobot_BNO055
     } BNO055AbsLinAccData;
 
     BNO055EulerData EulerAngles;
+    BNO055GyrData GyrData;
     BNO055LinAccData LinAccData;
     BNO055QuaData QuaData;
     BNO055AbsLinAccData AbsLinAccData;

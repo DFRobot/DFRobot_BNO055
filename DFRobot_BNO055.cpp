@@ -39,7 +39,7 @@ bool DFRobot_BNO055::init()
     if(++timeOut == 200)
       return false;
   }
-  delay(20);
+  delay(50);
   writeByte(eBNO055_REGISTER_PWR_MODE, eNORMAL_POWER_MODE);
   delay(20);
   writeByte(eBNO055_REGISTER_OPR_MODE, eNDOF|eFASTEST_MODE);
@@ -80,6 +80,38 @@ void DFRobot_BNO055::readEuler()
     EulerAngles.x = (int16_t)(xLow | (xHigh << 8)) / 15.800;
     EulerAngles.y = (int16_t)(yLow | (yHigh << 8)) / 15.800;
     EulerAngles.z = (int16_t)(zLow | (zHigh << 8)) / 15.800;
+    
+    if(EulerAngles.x > 360)  EulerAngles.x =  360;
+    if(EulerAngles.y < -90)  EulerAngles.y =  -90;
+    if(EulerAngles.y > 90)   EulerAngles.y =   90;
+    if(EulerAngles.z > 180)  EulerAngles.z =  180;
+    if(EulerAngles.z < -180) EulerAngles.z = -180;
+}
+
+void DFRobot_BNO055::readAngularVelocity()
+{ 
+  uint8_t xHigh, xLow, yLow, yHigh, zLow,zHigh;
+
+    Wire.beginTransmission(address);
+    /* Make sure to set address auto-increment bit */
+    Wire.write(eBNO055_REGISTER_GYR_DATA_X_LSB);
+    Wire.endTransmission();
+    Wire.requestFrom(address, (byte)6);
+
+    while (Wire.available() < 6);
+    
+    xLow  = Wire.read();
+    xHigh = Wire.read();
+    yLow  = Wire.read();
+    yHigh = Wire.read();
+    zLow  = Wire.read();
+    zHigh = Wire.read();
+
+    /* Shift values to create properly formed integer (low byte first) */
+    /* 1 degree = 16 LSB  1radian = 900 LSB   */
+    GyrData.x = (int16_t)(xLow | (xHigh << 8)) / 15.800;
+    GyrData.y = (int16_t)(yLow | (yHigh << 8)) / 15.800;
+    GyrData.z = (int16_t)(zLow | (zHigh << 8)) / 15.800;
 }
 
 void DFRobot_BNO055::readLinAcc()

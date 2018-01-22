@@ -5,7 +5,7 @@
  *
  * connect BNO055 I2C interface with your board (please reference board compatibility)
  *
- * Gets the quaternions and prints it out through the serial port.
+ * Gets the Euler angle of the current sensor and prints it out through the serial port.
  *
  * Copyright   [DFRobot](http://www.dfrobot.com), 2016
  * Copyright   GNU Lesser General Public License
@@ -18,35 +18,35 @@
 #include "DFRobot_BNO055.h"
 
 DFRobot_BNO055 mpu;
-
 void setup() 
 {
    Serial.begin(115200);
    while (!mpu.init())
    {
      Serial.println("ERROR! Unable to initialize the chip!");
-     delay(30);
+     delay(50);
    }
 //   mpu.setMode(mpu.eNORMAL_POWER_MODE, mpu.eFASTEST_MODE);
    delay(100);
-   Serial.println("Read quaternion...");
+   Serial.println("Read euler angles...");
 }
 
 void loop() 
 {
-  mpu.readQua();  /* read quaternion */
-  Serial.print("W: "); 
-  Serial.print(mpu.QuaData.w,3); 
-  Serial.print("  ");
+  mpu.readAngularVelocity();  /* read euler angle */
+  
   Serial.print("X: "); 
-  Serial.print(mpu.QuaData.x,3); 
-  Serial.print("  ");
+  Serial.print(mpu.GyrData.x, 3); 
+  Serial.print("  "); 
+  
   Serial.print("Y: "); 
-  Serial.print(mpu.QuaData.y,3); 
+  Serial.print(mpu.GyrData.y, 3); 
   Serial.print("  ");
+  
   Serial.print("Z: "); 
-  Serial.print(mpu.QuaData.z,3); 
+  Serial.print(mpu.GyrData.z, 3); 
   Serial.println("  ");
+  
   delay(200);
 }
 

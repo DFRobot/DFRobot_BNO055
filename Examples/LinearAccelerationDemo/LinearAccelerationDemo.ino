@@ -27,7 +27,7 @@ void setup()
      Serial.println("ERROR! Unable to initialize the chip!");
      delay(50);
    }
-   mpu.setMode(mpu.eNORMAL_POWER_MODE, mpu.eFASTEST_MODE);
+//   mpu.setMode(mpu.eNORMAL_POWER_MODE, mpu.eFASTEST_MODE);
    delay(100);
    Serial.println("Read linear acceleration...");
 }

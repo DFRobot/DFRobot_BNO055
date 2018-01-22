@@ -5,7 +5,7 @@
  *
  * connect BNO055 I2C interface with your board (please reference board compatibility)
  *
- * Gets the Euler angle of the current sensor and prints it out through the serial port.
+ * This example can be used to display the gesture on dof10.exe
  *
  * Copyright   [DFRobot](http://www.dfrobot.com), 2016
  * Copyright   GNU Lesser General Public License
@@ -34,19 +34,19 @@ void setup()
 void loop() 
 {
   mpu.readEuler();  /* read euler angle */
-  
-  Serial.print("yaw: "); 
-  Serial.print(mpu.EulerAngles.x, 3); 
-  Serial.print("  "); 
-  
-  Serial.print("pitch："); 
+  /* In order to match the API of the upper computer, X ----> pitch  */
+  Serial.print("X:"); 
   Serial.print(mpu.EulerAngles.y, 3); 
-  Serial.print("  ");
-  
-  Serial.print("roll: "); 
+  Serial.print(" "); 
+  /* In order to match the API of the upper computer, Y ----> roll  */
+  Serial.print("Y:"); 
   Serial.print(mpu.EulerAngles.z, 3); 
-  Serial.println("  ");
+  Serial.print(" ");
+  /* In order to match the API of the upper computer, Z ----> yaw  */
+  Serial.print("Z:"); 
+  Serial.print(mpu.EulerAngles.x, 3); 
+  Serial.println(" ");
   
-  delay(200);
+  delay(80);
 }
 
