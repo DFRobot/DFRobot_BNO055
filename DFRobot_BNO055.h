@@ -9,7 +9,22 @@
 #define BNO055_ADDRESS                (0x28)        /* 0x28 com3 low 0x29 com3 high     */
 #define BNO055_POLL_TIMEOUT           (100)         /* Maximum number of read attempts  */
 #define BNO055_ID                     (0xA0)        /* pg58                             */
+#define NUM_BNO055_OFFSET_REGISTERS   (22)
+typedef struct
+{
+    int16_t accel_offset_x;
+    int16_t accel_offset_y;
+    int16_t accel_offset_z;
+    int16_t mag_offset_x;
+    int16_t mag_offset_y;
+    int16_t mag_offset_z;
+    int16_t gyro_offset_x;
+    int16_t gyro_offset_y;
+    int16_t gyro_offset_z;
 
+    int16_t accel_radius;
+    int16_t mag_radius;
+} DFRobotBNO055_offsets_t;
 class DFRobot_BNO055
 {
   public:
@@ -45,6 +60,37 @@ class DFRobot_BNO055
         eUI_MODE         = 0b01100000,
         eNORMAL_MODE     = 0b10000000,
     } eBNO055DataRateMode_t;
+    
+    typedef enum
+    {
+      eREMAP_CONFIG_P0                                         = 0x21,
+      eREMAP_CONFIG_P1                                         = 0x24, // default
+      eREMAP_CONFIG_P2                                         = 0x24,
+      eREMAP_CONFIG_P3                                         = 0x21,
+      eREMAP_CONFIG_P4                                         = 0x24,
+      eREMAP_CONFIG_P5                                         = 0x21,
+      eREMAP_CONFIG_P6                                         = 0x21,
+      eREMAP_CONFIG_P7                                         = 0x24
+    } eBNO055AxisRemap_config_t;
+    typedef enum
+    {
+      eREMAP_SIGN_P0                                           = 0x04,
+      eREMAP_SIGN_P1                                           = 0x00, // default
+      eREMAP_SIGN_P2                                           = 0x06,
+      eREMAP_SIGN_P3                                           = 0x02,
+      eREMAP_SIGN_P4                                           = 0x03,
+      eREMAP_SIGN_P5                                           = 0x01,
+      eREMAP_SIGN_P6                                           = 0x07,
+      eREMAP_SIGN_P7                                           = 0x05
+    } eBNO055AxisRemap_sign_t;
+    typedef struct
+    {
+      uint8_t  accel_rev;
+      uint8_t  mag_rev;
+      uint8_t  gyro_rev;
+      uint16_t sw_rev;
+      uint8_t  bl_rev;
+    } DFRobotBNO055_ReInfo_t;
 /*
  * @brief init BNO055 device
  *
@@ -61,6 +107,7 @@ class DFRobot_BNO055
  *
  */
     void setMode(eBNO055PowerModes_t powerMode, eBNO055DataRateMode_t dataRate);
+    void setOpMode(eBNO055Mode_t opMode);
 /*
  * @brief  Read euler angles.
  *         The resulting data is stored in EulerAngles.
@@ -91,9 +138,19 @@ class DFRobot_BNO055
  *         For exmple: AbsLinAccData.x, AbsLinAccData.y, AbsLinAccData.z
  */
     void calcAbsLinAcc(void);
-
+    
+    void setAxisRemap(eBNO055AxisRemap_config_t remapcode );
+    void setAxisSign(eBNO055AxisRemap_sign_t remapsign );
+    void getRevInfo(DFRobotBNO055_ReInfo_t* );
     void getInfo(void);
-
+    void getSystemStatus( uint8_t *system_status,uint8_t *self_result,uint8_t *system_error);
+    void getCalibration( uint8_t* system, uint8_t* gyro, uint8_t* accel, uint8_t* mag);
+    /* Functions to deal with raw calibration data */
+    bool getSensorOffsets(uint8_t* calibData);
+    bool getSensorOffsets(DFRobotBNO055_offsets_t &offsets_type);
+    void setSensorOffsets(const uint8_t* calibData);
+    void setSensorOffsets(const DFRobotBNO055_offsets_t &offsets_type);
+    bool isFullyCalibrated(void);
     byte SystemStatusCode;
     byte SelfTestStatus;
     byte SystemError;
@@ -265,9 +322,10 @@ class DFRobot_BNO055
   private:
     void writeByte(eBNO055Registers_t reg, byte value);
     byte readByte(eBNO055Registers_t reg);
+    bool readByteLen(eBNO055Registers_t reg, byte * buffer, uint8_t len);
     byte address;
     eBNO055DataRateMode_t dataSpeed;
-    eBNO055Mode_t mode;
+    eBNO055Mode_t _mode;
     byte message;
 };
 

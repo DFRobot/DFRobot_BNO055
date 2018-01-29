@@ -16,6 +16,7 @@ init	KEYWORD2
 readEuler	KEYWORD2
 setMode	KEYWORD2
 getInfo	KEYWORD2
+getCalibration	KEYWORD2
 readLinAcc	KEYWORD2
 readQua	KEYWORD2
 calcAbsLinAcc	KEYWORD2
