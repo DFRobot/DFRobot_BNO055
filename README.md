@@ -24,6 +24,8 @@ Provides an Arduino library for reading and interpreting Bosch BNO055 data over 
 
 To use this library download the zip file, uncompress it to a folder named DFRobot_BNO055. 
 Download the zip file first to use this library and uncompress it to a folder named DFRobot_BNO055. 
+If you want to see the graphical interface using DFRobot_display_dof10.ino,
+you can download IMU_show.exe at https://github.com/DFRobot/DFRobot_IMU_Show/releases.
 
 ## Methods
 

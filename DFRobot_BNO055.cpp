@@ -325,7 +325,7 @@ void DFRobot_BNO055::setSensorOffsets(const DFRobotBNO055_offsets_t &offsets_typ
 
 void DFRobot_BNO055::readEuler()
 { 
-  uint8_t xHigh, xLow, yLow, yHigh, zLow,zHigh;
+  uint8_t xHigh=0, xLow=0, yLow, yHigh, zLow,zHigh;
 
     Wire.beginTransmission(address);
     /* Make sure to set address auto-increment bit */
@@ -347,7 +347,7 @@ void DFRobot_BNO055::readEuler()
     EulerAngles.x = (int16_t)(xLow | (xHigh << 8)) / 15.800;
     EulerAngles.y = (int16_t)(yLow | (yHigh << 8)) / 15.800;
     EulerAngles.z = (int16_t)(zLow | (zHigh << 8)) / 15.800;
-    
+
     if(EulerAngles.x > 360)  EulerAngles.x =  360;
     if(EulerAngles.y < -90)  EulerAngles.y =  -90;
     if(EulerAngles.y > 90)   EulerAngles.y =   90;

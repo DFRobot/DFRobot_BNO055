@@ -14,7 +14,6 @@
  * date  2018-1-8
  */
  
-#include <Wire.h> 
 #include "DFRobot_BNO055.h"
 
 DFRobot_BNO055 mpu;
@@ -35,15 +34,15 @@ void loop()
 {
   mpu.readEuler();  /* read euler angle */
   /* In order to match the API of the upper computer, X ----> pitch  */
-  Serial.print("X:"); 
+  Serial.print("pitch:"); 
   Serial.print(mpu.EulerAngles.y, 3); 
   Serial.print(" "); 
   /* In order to match the API of the upper computer, Y ----> roll  */
-  Serial.print("Y:"); 
+  Serial.print("roll:"); 
   Serial.print(mpu.EulerAngles.z, 3); 
   Serial.print(" ");
   /* In order to match the API of the upper computer, Z ----> yaw  */
-  Serial.print("Z:"); 
+  Serial.print("yaw:"); 
   Serial.print(mpu.EulerAngles.x, 3); 
   Serial.println(" ");
   
