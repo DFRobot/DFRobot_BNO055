@@ -39,7 +39,7 @@ void loop()
   Serial.print(mpu.EulerAngles.x, 3); 
   Serial.print("  "); 
   
-  Serial.print("pitch："); 
+  Serial.print("pitch:"); 
   Serial.print(mpu.EulerAngles.y, 3); 
   Serial.print("  ");
   
