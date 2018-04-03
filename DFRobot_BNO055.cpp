@@ -332,8 +332,6 @@ void DFRobot_BNO055::readEuler()
     Wire.write(eBNO055_REGISTER_EUL_DATA_X_LSB);
     Wire.endTransmission();
     Wire.requestFrom(address, (byte)6);
-
-    while (Wire.available() < 6);
     
     xLow  = Wire.read();
     xHigh = Wire.read();
@@ -364,8 +362,6 @@ void DFRobot_BNO055::readAngularVelocity()
     Wire.write(eBNO055_REGISTER_GYR_DATA_X_LSB);
     Wire.endTransmission();
     Wire.requestFrom(address, (byte)6);
-
-    while (Wire.available() < 6);
     
     xLow  = Wire.read();
     xHigh = Wire.read();
@@ -391,9 +387,6 @@ void DFRobot_BNO055::readLinAcc()
     Wire.endTransmission();
     Wire.requestFrom(address, (byte)6);
     
-    /* Wait around until enough data is available  */
-    while (Wire.available() < 6);
-    
     xLow = Wire.read();
     xHigh = Wire.read();
     yLow = Wire.read();
@@ -417,9 +410,6 @@ void DFRobot_BNO055::readQua()
     Wire.write(eBNO055_REGISTER_QUA_DATA_W_LSB);
     Wire.endTransmission();
     Wire.requestFrom(address, (byte)8);
-    
-    /* Wait around until enough data is available  */
-    while (Wire.available() < 8);
     
     wLow = Wire.read();
     wHigh = Wire.read();
@@ -522,7 +512,6 @@ byte DFRobot_BNO055::readByte(eBNO055Registers_t reg)
 
   Wire.requestFrom(address, (byte)1);
   value = Wire.read();
-  Wire.endTransmission(false);
 
   return value;
 }
