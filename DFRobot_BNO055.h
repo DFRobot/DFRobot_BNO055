@@ -2,9 +2,13 @@
 #ifndef __BNO055_H__
 #define __BNO055_H__
 
-#include "Arduino.h"
+#if ARDUINO >= 100
+ #include "Arduino.h"
+#else
+ #include "WProgram.h"
+#endif
 
-#include "Wire.h"
+#include <Wire.h>
 
 #define BNO055_ADDRESS                (0x28)        /* 0x28 com3 low 0x29 com3 high     */
 #define BNO055_POLL_TIMEOUT           (100)         /* Maximum number of read attempts  */
