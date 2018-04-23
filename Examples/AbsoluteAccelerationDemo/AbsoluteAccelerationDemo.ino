@@ -38,13 +38,13 @@ void loop()
   
   Serial.print("X: "); 
   Serial.print(mpu.AbsLinAccData.x, 3); 
-  Serial.print("   ");
+  Serial.print(" m/s^2   ");
   Serial.print("Y: "); 
   Serial.print(mpu.AbsLinAccData.y, 3); 
-  Serial.print("   ");
+  Serial.print(" m/s^2   ");
   Serial.print("Z: "); 
   Serial.print(mpu.AbsLinAccData.z, 3); 
-  Serial.println("   ");
+  Serial.println(" m/s^2   ");
   delay(200);
 }
 

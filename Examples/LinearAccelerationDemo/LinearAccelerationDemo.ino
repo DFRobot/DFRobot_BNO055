@@ -37,13 +37,13 @@ void loop()
   mpu.readLinAcc();   /* read linear acceleration */
   Serial.print("X: "); 
   Serial.print(mpu.LinAccData.x,3); 
-  Serial.print("  ");
+  Serial.print(" m/s^2  ");
   Serial.print("Y: "); 
   Serial.print(mpu.LinAccData.y,3); 
-  Serial.print("  ");
+  Serial.print(" m/s^2  ");
   Serial.print("Z: "); 
   Serial.print(mpu.LinAccData.z,3); 
-  Serial.println("  ");
+  Serial.println(" m/s^2  ");
   delay(200);
 }
 

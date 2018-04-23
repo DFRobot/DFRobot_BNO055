@@ -395,9 +395,10 @@ void DFRobot_BNO055::readLinAcc()
     zHigh = Wire.read();
     
     /* Shift values to create properly formed integer (low byte first) */
-    LinAccData.x = (int16_t)(xLow | (xHigh << 8));
-    LinAccData.y = (int16_t)(yLow | (yHigh << 8));
-    LinAccData.z = (int16_t)(zLow | (zHigh << 8));
+    /*1m/s2=100LSB        1mg=1LSB*/
+    LinAccData.x = (int16_t)(xLow | (xHigh << 8))/100.0;
+    LinAccData.y = (int16_t)(yLow | (yHigh << 8))/100.0;
+    LinAccData.z = (int16_t)(zLow | (zHigh << 8))/100.0;
     
 }
 

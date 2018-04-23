@@ -5,7 +5,7 @@
  *
  * connect BNO055 I2C interface with your board (please reference board compatibility)
  *
- * Gets the Euler angle of the current sensor and prints it out through the serial port.
+ * Gets the Angular Velocity of the current sensor and prints it out through the serial port.
  *
  * Copyright   [DFRobot](http://www.dfrobot.com), 2016
  * Copyright   GNU Lesser General Public License
@@ -28,24 +28,24 @@ void setup()
    }
 //   mpu.setMode(mpu.eNORMAL_POWER_MODE, mpu.eFASTEST_MODE);
    delay(100);
-   Serial.println("Read euler angles...");
+   Serial.println("Read Angular Velocity...");
 }
 
 void loop() 
 {
-  mpu.readAngularVelocity();  /* read euler angle */
+  mpu.readAngularVelocity();  /* read Angular Velocity */
   
   Serial.print("X: "); 
   Serial.print(mpu.GyrData.x, 3); 
-  Serial.print("  "); 
+  Serial.print(" dps  "); 
   
   Serial.print("Y: "); 
   Serial.print(mpu.GyrData.y, 3); 
-  Serial.print("  ");
+  Serial.print(" dps ");
   
   Serial.print("Z: "); 
   Serial.print(mpu.GyrData.z, 3); 
-  Serial.println("  ");
+  Serial.println(" dps ");
   
   delay(200);
 }
