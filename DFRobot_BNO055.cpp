@@ -344,7 +344,7 @@ void DFRobot_BNO055::readEuler()
     /* 1 degree = 16 LSB  1radian = 900 LSB   */
     EulerAngles.x = (int16_t)(xLow | (xHigh << 8)) / 15.800;
     EulerAngles.y = (int16_t)(yLow | (yHigh << 8)) / 15.800;
-    EulerAngles.z = (int16_t)(zLow | (zHigh << 8)) / 15.800;
+    EulerAngles.z = -(int16_t)(zLow | (zHigh << 8)) / 15.800;
 
     if(EulerAngles.x > 360)  EulerAngles.x =  360;
     if(EulerAngles.y < -90)  EulerAngles.y =  -90;
