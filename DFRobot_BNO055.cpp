@@ -402,6 +402,31 @@ void DFRobot_BNO055::readLinAcc()
     
 }
 
+void DFRobot_BNO055::readAcc()
+{
+    uint8_t xHigh, xLow, yLow, yHigh, zLow,zHigh;
+    
+    Wire.beginTransmission(address);
+    /* Make sure to set address auto-increment bit  */
+    Wire.write(eBNO055_REGISTER_ACC_DATA_X_LSB);
+    Wire.endTransmission();
+    Wire.requestFrom(address, (byte)6);
+    
+    xLow = Wire.read();
+    xHigh = Wire.read();
+    yLow = Wire.read();
+    yHigh = Wire.read();
+    zLow = Wire.read();
+    zHigh = Wire.read();
+    
+    /* Shift values to create properly formed integer (low byte first) */
+    /*1m/s2=100LSB        1mg=1LSB*/
+    AccData.x = (int16_t)(xLow | (xHigh << 8))/100.0;
+    AccData.y = (int16_t)(yLow | (yHigh << 8))/100.0;
+    AccData.z = (int16_t)(zLow | (zHigh << 8))/100.0;
+    
+}
+
 void DFRobot_BNO055::readQua()
 {
     uint8_t wHigh, wLow, xHigh, xLow, yLow, yHigh, zLow,zHigh;

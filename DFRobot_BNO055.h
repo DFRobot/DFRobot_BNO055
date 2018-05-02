@@ -131,6 +131,12 @@ class DFRobot_BNO055
  */
     void readLinAcc(void);
 /*
+ * @brief  Read acceleration.
+ *         The resulting data is stored in AccData.
+ *         For exmple: AccData.x, AccData.y, AccData.z
+ */
+    void readAcc(void);
+/*
  * @brief read quaternion data
  *         The resulting data is stored in QuaData.
  *         For exmple: QuaData.w, QuaData.x, QuaData.y, QuaData.z
@@ -316,12 +322,20 @@ class DFRobot_BNO055
         float y;
         float z;
     } BNO055AbsLinAccData;
+    
+    typedef struct BNO055AccData_s
+    {
+        float x;
+        float y;
+        float z;
+    } BNO055AccData;
 
     BNO055EulerData EulerAngles;
     BNO055GyrData GyrData;
     BNO055LinAccData LinAccData;
     BNO055QuaData QuaData;
     BNO055AbsLinAccData AbsLinAccData;
+    BNO055AccData AccData;
 
   private:
     void writeByte(eBNO055Registers_t reg, byte value);

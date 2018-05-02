@@ -18,10 +18,12 @@ setMode	KEYWORD2
 getInfo	KEYWORD2
 getCalibration	KEYWORD2
 readLinAcc	KEYWORD2
+readAcc	KEYWORD2
 readQua	KEYWORD2
 calcAbsLinAcc	KEYWORD2
 EulerAngles	KEYWORD2
 LinAccData	KEYWORD2
+AccData	KEYWORD2
 QuaData	KEYWORD2
 AbsLinAccData	KEYWORD2
 SystemStatusCode	KEYWORD2
