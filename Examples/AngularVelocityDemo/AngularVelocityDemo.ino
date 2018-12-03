@@ -7,8 +7,6 @@
  *
  * Gets the Angular Velocity of the current sensor and prints it out through the serial port.
  *
- * Copyright   [DFRobot](http://www.dfrobot.com), 2016
- * Copyright   GNU Lesser General Public License
  *
  * version  V0.1
  * date  2018-1-8

@@ -156,6 +156,3 @@ Arduino uno |       √      |             |            |
 
 - Nov 31, 2018 - Version 0.1 released.
 
-## Credits
-
-Written by DFRobot_YangYue, 2018. (Welcome to our [website](https://www.dfrobot.com/))

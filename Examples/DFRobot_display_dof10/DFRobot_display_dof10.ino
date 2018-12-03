@@ -7,8 +7,6 @@
  *
  * This example can be used to display the gesture on dof10.exe
  *
- * Copyright   [DFRobot](http://www.dfrobot.com), 2016
- * Copyright   GNU Lesser General Public License
  *
  * version  V0.1
  * date  2018-1-8
