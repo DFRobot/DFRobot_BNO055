@@ -155,4 +155,9 @@ Arduino uno |       √      |             |            |
 ## History
 
 - Nov 31, 2018 - Version 0.1 released.
+## About this Driver ##
+
+Adafruit invests time and resources providing this open source code.  Please support Adafruit and open-source hardware by purchasing products from Adafruit!
+
+Written by Kevin (KTOWN) Townsend for Adafruit Industries.
 
