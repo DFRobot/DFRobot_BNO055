@@ -36,7 +36,7 @@ const DFRobot_BNO055::sRegsPage1_t PROGMEM    sRegsPage1 = DFRobot_BNO055::sRegs
   #define regOffset1(reg) ( (uint32_t) (& (reg)) - regsPage1Addr )
 #endif
 
-#define __DBG   1
+#define __DBG   0
 #if __DBG
 # define __DBG(x)   Serial.print("__DBG: "); Serial.print(__FUNCTION__); Serial.print(" "); Serial.print(__LINE__); Serial.print(" "); x; Serial.println()
 #else

@@ -100,7 +100,7 @@ void setup()
   // hot to trig this: any motion --> still --> still
   bno.setAccNmThres(100);
 
-  bno.setGyrIntEnable(BNO::eGyrIntSetHrXAxis | BNO::eGyrIntSetHrYAxis | BNO::eGyrIntSetHrZAxis);    // set gyroscope interrupt enable, in most cases, this is enough.
+  bno.setGyrIntEnable((BNO::eGyrIntSet_t) (BNO::eGyrIntSetHrXAxis | BNO::eGyrIntSetHrYAxis | BNO::eGyrIntSetHrZAxis));    // set gyroscope interrupt enable, in most cases, this is enough.
   // bno.setGyrIntEnable(BNO::eGyrIntSetAmYAxis | BNO::eGyrIntSetAmYAxis | BNO::eGyrIntSetAmZAxis);    // set gyroscope interrupt enable
   // bno.setGyrIntDisable(BNO::eGyrIntSetHrXAxis | BNO::eGyrIntSetAmXAxis);    // set gyroscope interrupt disable
 
