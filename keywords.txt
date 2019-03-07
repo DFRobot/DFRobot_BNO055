@@ -1,41 +1,197 @@
-#######################################
-# Syntax Coloring BNO055
-#######################################
 
-#######################################
-# Datatypes (KEYWORD1)
-#######################################
+eAxisAcc	LITERAL1
+eAxisMag	LITERAL1
+eAxisGyr	LITERAL1
+eAxisLia	LITERAL1
+eAxisGrv	LITERAL1
+eAxis_t	LITERAL1
 
-DFRobot_BNO055	KEYWORD1
+eSingleAxisX	LITERAL1
+eSingleAxisY	LITERAL1
+eSingleAxisZ	LITERAL1
+eSingleAxis_t	LITERAL1
 
-#######################################
-# Methods and Functions (KEYWORD2)
-#######################################
+eIntGyrAm	LITERAL1
+eIntGyrHighRate	LITERAL1
+eIntAccHighG	LITERAL1
+eIntAccAm	LITERAL1
+eIntAccNm	LITERAL1
+eIntAll	LITERAL1
 
-init	KEYWORD2
-readEuler	KEYWORD2
-setMode	KEYWORD2
-getInfo	KEYWORD2
-getCalibration	KEYWORD2
-readLinAcc	KEYWORD2
-readAcc	KEYWORD2
-readQua	KEYWORD2
-calcAbsLinAcc	KEYWORD2
-EulerAngles	KEYWORD2
-LinAccData	KEYWORD2
-AccData	KEYWORD2
-QuaData	KEYWORD2
-AbsLinAccData	KEYWORD2
-SystemStatusCode	KEYWORD2
-SelfTestStatus	KEYWORD2
-SystemError	KEYWORD2
-readAngularVelocity	KEYWORD2
-GyrData	KEYWORD2
+eOprModeConfig	LITERAL1
+eOprModeAccOnly	LITERAL1
+eOprModeMagOnly	LITERAL1
+eOprModeGyroOnly	LITERAL1
+eOprModeAccMag	LITERAL1
+eOprModeAccGyro	LITERAL1
+eOprModeMagGyro	LITERAL1
+eOprModeAMG	LITERAL1
+eOprModeImu	LITERAL1
+eOprModeCompass	LITERAL1
+eOprModeM4G	LITERAL1
+eOprModeNdofFmcOff	LITERAL1
+eOprModeNdof	LITERAL1
+eOprMode_t	LITERAL1
 
-eNORMAL_POWER_MODE	KEYWORD2
-eLOW_POWER_MODE	KEYWORD2
-eSUSPEND_POWER_MODE	KEYWORD2
-eFASTEST_MODE	KEYWORD2
-eGAME_MODE	KEYWORD2
-eUI_MODE	KEYWORD2
-eNORMAL_MODE	KEYWORD2
+ePowerModeNormal	LITERAL1
+ePowerModeLowPower	LITERAL1
+ePowerModeSuspend	LITERAL1
+ePowerMode_t	LITERAL1
+
+x	KEYWORD1
+y	KEYWORD1
+z	KEYWORD1
+sAxisAnalog_t	KEYWORD1
+
+head	KEYWORD1
+roll	KEYWORD1
+pitch	KEYWORD1
+sEulAnalog_t	KEYWORD1
+
+w	KEYWORD1
+sQuaAnalog_t	KEYWORD1
+
+eAccRange_2G	LITERAL1
+eAccRange_4G	LITERAL1
+eAccRange_8G	LITERAL1
+eAccRange_16G	LITERAL1
+eAccRange_t	LITERAL1
+
+eAccBandWidth_7_81	LITERAL1
+eAccBandWidth_15_63	LITERAL1
+eAccBandWidth_31_25	LITERAL1
+eAccBandWidth_62_5	LITERAL1
+eAccBandWidth_125	LITERAL1
+eAccBandWidth_250	LITERAL1
+eAccBandWidth_500	LITERAL1
+eAccBandWidth_1000	LITERAL1
+eAccBandWidth_t	LITERAL1
+
+eAccPowerModeNormal	LITERAL1
+eAccPowerModeSuspend	LITERAL1
+eAccPowerModeLowPower1	LITERAL1
+eAccPowerModeStandby	LITERAL1
+eAccPowerModeLowPower2	LITERAL1
+eAccPowerModeDeepSuspend	LITERAL1
+eAccPowerMode_t
+
+eMagDataRate_2	LITERAL1
+eMagDataRate_6	LITERAL1
+eMagDataRate_8	LITERAL1
+eMagDataRate_10	LITERAL1
+eMagDataRate_15	LITERAL1
+eMagDataRate_20	LITERAL1
+eMagDataRate_25	LITERAL1
+eMagDataRate_30	LITERAL1
+eMagDataRate_t	LITERAL1
+
+eMagOprModeLowPower	LITERAL1
+eMagOprModeRegular	LITERAL1
+eMagOprModeEnhancedRegular	LITERAL1
+eMagOprModeHighAccuracy	LITERAL1
+eMagOprMode_t	LITERAL1
+
+eMagPowerModeNormal	LITERAL1
+eMagPowerModeSleep	LITERAL1
+eMagPowerModeSuspend	LITERAL1
+eMagPowerModeForce	LITERAL1
+eMagPowerMode_t	LITERAL1
+
+eGyrRange_2000	LITERAL1
+eGyrRange_1000	LITERAL1
+eGyrRange_500	LITERAL1
+eGyrRange_250	LITERAL1
+eGyrRange_125	LITERAL1
+eGyrRange_t	LITERAL1
+
+eGyrBandWidth_523	LITERAL1
+eGyrBandWidth_230	LITERAL1
+eGyrBandWidth_116	LITERAL1
+eGyrBandWidth_47	LITERAL1
+eGyrBandWidth_23	LITERAL1
+eGyrBandWidth_12	LITERAL1
+eGyrBandWidth_64	LITERAL1
+eGyrBandWidth_32	LITERAL1
+eGyrBandWidth_t	LITERAL1
+
+eGyrPowerModeNormal	LITERAL1
+eGyrPowerModeFastPowerUp	LITERAL1
+eGyrPowerModeDeepSuspend	LITERAL1
+eGyrPowerModeSuspend	LITERAL1
+eGyrPowerModeAdvancedPowersave	LITERAL1
+eGyrPowerMode_t	LITERAL1
+
+eAccIntSetAmnmXAxis	LITERAL1
+eAccIntSetAmnmYAxis	LITERAL1
+eAccIntSetAmnmZAxis	LITERAL1
+eAccIntSetHgXAxis	LITERAL1
+eAccIntSetHgYAxis	LITERAL1
+eAccIntSetHgZAxis	LITERAL1
+eAccIntSetAll	LITERAL1
+eAccIntSet_t	LITERAL1
+
+eAccNmSmnmSm	LITERAL1
+eAccNmSmnmNm	LITERAL1
+eAccNmSmnm_t	LITERAL1
+
+eGyrIntSetAmXAxis	LITERAL1
+eGyrIntSetAmYAxis	LITERAL1
+eGyrIntSetAmZAxis	LITERAL1
+eGyrIntSetHrXAxis	LITERAL1
+eGyrIntSetHrYAxis	LITERAL1
+eGyrIntSetHrZAxis	LITERAL1
+eGyrIntSetAmFilt	LITERAL1
+eGyrIntSetHrFilt	LITERAL1
+eGyrIntSetAll	LITERAL1
+eGyrIntSet_t	LITERAL1
+
+eStatusOK	LITERAL1
+eStatusErr	LITERAL1
+eStatusErrDeviceNotDetect	LITERAL1
+eStatusErrDeviceReadyTimeOut	LITERAL1
+eStatusErrDeviceStatus	LITERAL1
+eStatusErrParameter	LITERAL1
+eStatus_t	LITERAL1
+
+eCom3Low	LITERAL1
+eCom3High	LITERAL1
+eCom3State_t	LITERAL1
+
+DFRobot_BNO055_IIC	KEYWORD1
+BNO	KEYWORD1
+lastOpreateStatus	KEYWORD1
+
+begin	KEYWORD1
+getAxis	KEYWORD1
+getEul	KEYWORD1
+getQua	KEYWORD1
+setAxisOffset	KEYWORD1
+setOprMode	KEYWORD1
+setPowerMode	KEYWORD1
+reset	KEYWORD1
+setAccRange	KEYWORD1
+setAccBandWidth	KEYWORD1
+setAccPowerMode	KEYWORD1
+setMagDataRate	KEYWORD1
+setMagOprMode	KEYWORD1
+setMagPowerMode	KEYWORD1
+setGyrRange	KEYWORD1
+setGyrBandWidth	KEYWORD1
+setGyrPowerMode	KEYWORD1
+getIntState	KEYWORD1
+setIntMaskEnable	KEYWORD1
+setIntMaskDisable	KEYWORD1
+setIntEnable	KEYWORD1
+setIntDisable	KEYWORD1
+setAccAmThres	KEYWORD1
+setAccIntAmDur	KEYWORD1
+setAccIntEnable	KEYWORD1
+setAccIntDisable	KEYWORD1
+setAccHighGDuration	KEYWORD1
+setAccHighGThres	KEYWORD1
+setAccNmThres	KEYWORD1
+setAccNmSet	KEYWORD1
+setGyrIntEnable	KEYWORD1
+setGyrIntDisable	KEYWORD1
+setGyrHrSet	KEYWORD1
+setGyrAmThres	KEYWORD1

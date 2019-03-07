@@ -1,581 +1,754 @@
-/***************************************************************************
-  This is a library for the BNO055 orientation sensor
-  Designed specifically to work with the Adafruit BNO055 Breakout.
-  Pick one up today in the adafruit shop!
-  ------> https://www.adafruit.com/product/2472
-  These sensors use I2C to communicate, 2 pins are required to interface.
-  Adafruit invests time and resources providing this open source code,
-  please support Adafruit andopen-source hardware by purchasing products
-  from Adafruit!
-  Written by KTOWN for Adafruit Industries.
-  MIT license, all text above must be included in any redistribution
- ***************************************************************************/
- 
+/*
+ MIT License
+
+ Copyright (C) <2019> <@DFRobot Frank>
+
+　Permission is hereby granted, free of charge, to any person obtaining a copy of this
+　software and associated documentation files (the "Software"), to deal in the Software
+　without restriction, including without limitation the rights to use, copy, modify,
+　merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+　permit persons to whom the Software is furnished to do so.
+
+　The above copyright notice and this permission notice shall be included in all copies or
+　substantial portions of the Software.
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+ INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+ PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE
+ FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
 #include "DFRobot_BNO055.h"
 
-bool DFRobot_BNO055::init()
+// use data struct to map register address
+const DFRobot_BNO055::sRegsPage0_t PROGMEM    sRegsPage0 = DFRobot_BNO055::sRegsPage0_t();
+const DFRobot_BNO055::sRegsPage1_t PROGMEM    sRegsPage1 = DFRobot_BNO055::sRegsPage1_t();
+
+// use regOffset0 to get register offset in reg page0, regOffset1 similar
+#ifdef __AVR__
+  const uint16_t    regsPage0Addr = (uint16_t) & sRegsPage0;
+  const uint16_t    regsPage1Addr = (uint16_t) & sRegsPage1;
+  #define regOffset0(reg) ( (uint16_t) (& (reg)) - regsPage0Addr )
+  #define regOffset1(reg) ( (uint16_t) (& (reg)) - regsPage1Addr )
+#else
+  const uint32_t    regsPage0Addr = (uint32_t) & sRegsPage0;
+  const uint32_t    regsPage1Addr = (uint32_t) & sRegsPage1;
+  #define regOffset0(reg) ( (uint32_t) (& (reg)) - regsPage0Addr )
+  #define regOffset1(reg) ( (uint32_t) (& (reg)) - regsPage1Addr )
+#endif
+
+#define __DBG   1
+#if __DBG
+# define __DBG(x)   Serial.print("__DBG: "); Serial.print(__FUNCTION__); Serial.print(" "); Serial.print(__LINE__); Serial.print(" "); x; Serial.println()
+#else
+# define __DBG(x)
+#endif
+
+#define writeRegBitsHelper(pageId, reg, flied, val) \
+  setToPage(pageId); \
+  writeRegBits(regOffset##pageId(reg), *(uint8_t*) &(flied), *(uint8_t*) &(val))
+
+// main class start ----------------------------------------------------------------
+
+DFRobot_BNO055::DFRobot_BNO055() { lastOpreateStatus = eStatusOK; _currentPage = 0xff; }
+
+DFRobot_BNO055::eStatus_t DFRobot_BNO055::begin()
 {
-  uint16_t timeOut = 0;
-  address = BNO055_ADDRESS;
-  /*  IIC init */
-  Wire.begin();
-  /* Make sure we have the correct chip ID. This checks
-     for correct address and that the IC is properly connected */
-  delay(100);
-  
-  if (readByte(eBNO055_REGISTER_CHIP_ID) != BNO055_ID) 
-  {
-    
-    while((readByte(eBNO055_REGISTER_CHIP_ID) != BNO055_ID))
-    {  
-        delay(4);
-        if(++timeOut == 500)
-           return false;
-      }
-    /*wont get here now, it will just hang above */
-    if (readByte(eBNO055_REGISTER_CHIP_ID) != BNO055_ID)
-       return false;
-  }
-  
-  timeOut = 0;
-  /* Go to config mode if not there */
-  writeByte(eBNO055_REGISTER_OPR_MODE, eCONFIGMODE); 
-  delay(25); 
-  readByte(eBNO055_REGISTER_CHIP_ID);
-  /* reset the sensor */
-  writeByte(eBNO055_REGISTER_SYS_TRIGGER, 0b00100000); 
-  
-  while (readByte(eBNO055_REGISTER_CHIP_ID) != BNO055_ID) 
-  {
-    
-    delay(10);
-    if(++timeOut == 200)
-      return false;
-  }
-  delay(50);
-  writeByte(eBNO055_REGISTER_PWR_MODE, eNORMAL_POWER_MODE);
-  delay(20);
-  writeByte(eBNO055_REGISTER_OPR_MODE, eNDOF|eFASTEST_MODE);
-  delay(20);
-  return true;
-}
-
-void DFRobot_BNO055::setMode(eBNO055PowerModes_t powerMode, eBNO055DataRateMode_t dataRate)
-{
-  /* set a base mode (normal power mode, fastest/NDOF, manually packed for now) and start! */
-  writeByte(eBNO055_REGISTER_PWR_MODE, powerMode);
-  delay(20);
-  writeByte(eBNO055_REGISTER_OPR_MODE, eNDOF|dataRate);
-  delay(20);
-}
-
-void DFRobot_BNO055::setOpMode(eBNO055Mode_t opMode)
-{
-  _mode = opMode;
-  writeByte(eBNO055_REGISTER_OPR_MODE, _mode);
-  delay(30);
-}
-
-void DFRobot_BNO055::setAxisRemap(eBNO055AxisRemap_config_t remapcode )
-{
-    eBNO055Mode_t modeback = _mode;
-    setOpMode(eCONFIGMODE);
-    delay(25);
-    writeByte(eBNO055_REGISTER_AXIS_MAP_CONFIG, remapcode);
-    delay(10);
-    setOpMode(modeback);
-    delay(20);
-}
-
-void DFRobot_BNO055::getRevInfo(DFRobotBNO055_ReInfo_t *info)
-{
-    uint8_t a, b;
-
-    memset(info, 0, sizeof(DFRobotBNO055_ReInfo_t));
-
-    /* Check the accelerometer revision */
-    info->accel_rev = readByte(eBNO055_REGISTER_ACC_ID);
-
-    /* Check the magnetometer revision */
-    info->mag_rev = readByte(eBNO055_REGISTER_MAG_ID);
-
-    /* Check the gyroscope revision */
-    info->gyro_rev = readByte(eBNO055_REGISTER_GYR_ID);
-
-    /* Check the SW revision */
-    info->bl_rev = readByte(eBNO055_REGISTER_BL_REV_ID);
-
-    a = readByte(eBNO055_REGISTER_SW_REV_ID_LSB);
-    b = readByte(eBNO055_REGISTER_SW_REV_ID_MSB);
-    info->sw_rev = (((uint16_t)b) << 8) | ((uint16_t)a);
-}
-void DFRobot_BNO055::setAxisSign(eBNO055AxisRemap_sign_t remapsign)
-{
-    eBNO055Mode_t modeback = _mode;
-
-    setOpMode(eCONFIGMODE);
-    delay(25);
-    writeByte(eBNO055_REGISTER_AXIS_MAP_SIGN, remapsign);
-    delay(10);
-    setOpMode(modeback);
-    delay(20);
-}
-void DFRobot_BNO055::getSystemStatus(uint8_t *system_status, uint8_t *self_result, uint8_t *system_error)
-{
-  writeByte(eBNO055_REGISTER_PAGE_ID, 0);
-
-  /* System Status (see section 4.3.58)
-     ---------------------------------
-     0 = Idle
-     1 = System Error
-     2 = Initializing Peripherals
-     3 = System Iniitalization
-     4 = Executing Self-Test
-     5 = Sensor fusio algorithm running
-     6 = System running without fusion algorithms */
-
-  if (system_status != 0)
-    *system_status    = readByte(eBNO055_REGISTER_SYS_STATUS);
-
-  /* Self Test Results (see section )
-     --------------------------------
-     1 = test passed, 0 = test failed
-
-     Bit 0 = Accelerometer self test
-     Bit 1 = Magnetometer self test
-     Bit 2 = Gyroscope self test
-     Bit 3 = MCU self test
-
-     0x0F = all good! */
-
-  if (self_result != 0)
-    *self_result = readByte(eBNO055_REGISTER_ST_RESULT);
-
-  /* System Error (see section 4.3.59)
-     ---------------------------------
-     0 = No error
-     1 = Peripheral initialization error
-     2 = System initialization error
-     3 = Self test result failed
-     4 = Register map value out of range
-     5 = Register map address out of range
-     6 = Register map write error
-     7 = BNO low power mode not available for selected operat ion mode
-     8 = Accelerometer power mode not available
-     9 = Fusion algorithm configuration error
-     A = Sensor configuration error */
-
-  if (system_error != 0)
-    *system_error = readByte(eBNO055_REGISTER_SYS_ERR);
-
-  delay(200);
-}
-
-void DFRobot_BNO055::getCalibration( uint8_t* sys, uint8_t* gyro, uint8_t* accel, uint8_t* mag)
-{
-  uint8_t calData = readByte(eBNO055_REGISTER_CALIB_STAT);
-  if (sys != NULL) {
-    *sys = (calData >> 6) & 0x03;
-  }
-  if (gyro != NULL) {
-    *gyro = (calData >> 4) & 0x03;
-  }
-  if (accel != NULL) {
-    *accel = (calData >> 2) & 0x03;
-  }
-  if (mag != NULL) {
-    *mag = calData & 0x03;
-  }
-}
-bool DFRobot_BNO055::isFullyCalibrated(void)
-{
-    uint8_t system, gyro, accel, mag;
-    getCalibration(&system, &gyro, &accel, &mag);
-    if (system < 3 || gyro < 3 || accel < 3 || mag < 3)
-        return false;
-    return true;
-}
-
-bool DFRobot_BNO055::getSensorOffsets(uint8_t* calibData)
-{
-    if (isFullyCalibrated())
-    {
-        eBNO055Mode_t modeback = _mode;
-        setOpMode(eCONFIGMODE);
-        readByteLen(eBNO055_REGISTER_ACC_OFFSET_X_LSB, calibData, NUM_BNO055_OFFSET_REGISTERS);
-        setOpMode(modeback);
-        return true;
+  uint8_t   temp = getReg(regOffset0(sRegsPage0.CHIP_ID), 0);  // get chip id
+  __DBG(Serial.print("CHIP_ID: "); Serial.print(temp, HEX));
+  if((lastOpreateStatus == eStatusOK) && (temp == BNO055_REG_CHIP_ID_DEFAULT)) {
+    uint8_t   timeOut = 0;
+    reset();
+    do {
+      temp = getReg(regOffset0(sRegsPage0.SYS_STATUS), 0);
+      delay(10);
+      timeOut ++;
+    } while((temp != 0) && (timeOut < 50));
+    if(timeOut == 50)
+      lastOpreateStatus = eStatusErrDeviceReadyTimeOut;
+    else {
+      setOprMode(eOprModeConfig);
+      setUnit();
+      setAccRange(eAccRange_4G);
+      setGyrRange(eGyrRange_2000);
+      setPowerMode(ePowerModeNormal);
+      setOprMode(eOprModeNdof);
+      delay(50);
     }
-    return false;
+  } else
+    lastOpreateStatus = eStatusErrDeviceNotDetect;
+  return lastOpreateStatus;
 }
 
-bool DFRobot_BNO055::getSensorOffsets(DFRobotBNO055_offsets_t &offsets_type)
+// get data functions ----------------------------------------------------------------
+
+// get register offset of raw data
+uint8_t getOffsetOfData(DFRobot_BNO055::eAxis_t eAxis)
 {
-    if (isFullyCalibrated())
-    {
-        eBNO055Mode_t modeback = _mode;
-        setOpMode(eCONFIGMODE);
-        delay(25);
-        /* Accel offset range depends on the G-range:
-           +/-2g  = +/- 2000 mg
-           +/-4g  = +/- 4000 mg
-           +/-8g  = +/- 8000 mg
-           +/-16g = +/- 16000 mg */
-        offsets_type.accel_offset_x = (readByte(eBNO055_REGISTER_ACC_OFFSET_X_MSB) << 8) | (readByte(eBNO055_REGISTER_ACC_OFFSET_X_LSB));
-        offsets_type.accel_offset_y = (readByte(eBNO055_REGISTER_ACC_OFFSET_Y_MSB) << 8) | (readByte(eBNO055_REGISTER_ACC_OFFSET_Y_LSB));
-        offsets_type.accel_offset_z = (readByte(eBNO055_REGISTER_ACC_OFFSET_Z_MSB) << 8) | (readByte(eBNO055_REGISTER_ACC_OFFSET_Z_LSB));
-
-        /* Magnetometer offset range = +/- 6400 LSB where 1uT = 16 LSB */
-        offsets_type.mag_offset_x = (readByte(eBNO055_REGISTER_MAG_OFFSET_X_MSB) << 8) | (readByte(eBNO055_REGISTER_MAG_OFFSET_X_LSB));
-        offsets_type.mag_offset_y = (readByte(eBNO055_REGISTER_MAG_OFFSET_Y_MSB) << 8) | (readByte(eBNO055_REGISTER_MAG_OFFSET_Y_LSB));
-        offsets_type.mag_offset_z = (readByte(eBNO055_REGISTER_MAG_OFFSET_Z_MSB) << 8) | (readByte(eBNO055_REGISTER_MAG_OFFSET_Z_LSB));
-
-        /* Gyro offset range depends on the DPS range:
-          2000 dps = +/- 32000 LSB
-          1000 dps = +/- 16000 LSB
-           500 dps = +/- 8000 LSB
-           250 dps = +/- 4000 LSB
-           125 dps = +/- 2000 LSB
-           ... where 1 DPS = 16 LSB */
-        offsets_type.gyro_offset_x = (readByte(eBNO055_REGISTER_GYR_OFFSET_X_MSB) << 8) | (readByte(eBNO055_REGISTER_GYR_OFFSET_X_LSB));
-        offsets_type.gyro_offset_y = (readByte(eBNO055_REGISTER_GYR_OFFSET_Y_MSB) << 8) | (readByte(eBNO055_REGISTER_GYR_OFFSET_Y_LSB));
-        offsets_type.gyro_offset_z = (readByte(eBNO055_REGISTER_GYR_OFFSET_Z_MSB) << 8) | (readByte(eBNO055_REGISTER_GYR_OFFSET_Z_LSB));
-
-        /* Accelerometer radius = +/- 1000 LSB */
-        offsets_type.accel_radius = (readByte(eBNO055_REGISTER_ACC_RADIUS_MSB) << 8) | (readByte(eBNO055_REGISTER_ACC_RADIUS_LSB));
-
-        /* Magnetometer radius = +/- 960 LSB */
-        offsets_type.mag_radius = (readByte(eBNO055_REGISTER_MAG_RADIUS_MSB) << 8) | (readByte(eBNO055_REGISTER_MAG_RADIUS_LSB));
-
-        setOpMode(modeback);
-        return true;
-    }
-    return false;
-}
-
-void DFRobot_BNO055::setSensorOffsets(const uint8_t* calibData)
-{
-    eBNO055Mode_t modeback = _mode;
-    setOpMode(eCONFIGMODE);
-    delay(25);
-
-    /* Note: Configuration will take place only when user writes to the last
-       byte of each config data pair (ex. ACCEL_OFFSET_Z_MSB_ADDR, etc.).
-       Therefore the last byte must be written whenever the user wants to
-       changes the configuration. */
-
-    /* A writeLen() would make this much cleaner */
-    writeByte(eBNO055_REGISTER_ACC_OFFSET_X_LSB, calibData[0]);
-    writeByte(eBNO055_REGISTER_ACC_OFFSET_X_MSB, calibData[1]);
-    writeByte(eBNO055_REGISTER_ACC_OFFSET_Y_LSB, calibData[2]);
-    writeByte(eBNO055_REGISTER_ACC_OFFSET_Y_MSB, calibData[3]);
-    writeByte(eBNO055_REGISTER_ACC_OFFSET_Z_LSB, calibData[4]);
-    writeByte(eBNO055_REGISTER_ACC_OFFSET_Z_MSB, calibData[5]);
-
-    writeByte(eBNO055_REGISTER_MAG_OFFSET_X_LSB, calibData[6]);
-    writeByte(eBNO055_REGISTER_MAG_OFFSET_X_MSB, calibData[7]);
-    writeByte(eBNO055_REGISTER_MAG_OFFSET_Y_LSB, calibData[8]);
-    writeByte(eBNO055_REGISTER_MAG_OFFSET_Y_MSB, calibData[9]);
-    writeByte(eBNO055_REGISTER_MAG_OFFSET_Z_LSB, calibData[10]);
-    writeByte(eBNO055_REGISTER_MAG_OFFSET_Z_MSB, calibData[11]);
-
-    writeByte(eBNO055_REGISTER_GYR_OFFSET_X_LSB, calibData[12]);
-    writeByte(eBNO055_REGISTER_GYR_OFFSET_X_MSB, calibData[13]);
-    writeByte(eBNO055_REGISTER_GYR_OFFSET_Y_LSB, calibData[14]);
-    writeByte(eBNO055_REGISTER_GYR_OFFSET_Y_MSB, calibData[15]);
-    writeByte(eBNO055_REGISTER_GYR_OFFSET_Z_LSB, calibData[16]);
-    writeByte(eBNO055_REGISTER_GYR_OFFSET_Z_MSB, calibData[17]);
-
-    writeByte(eBNO055_REGISTER_ACC_RADIUS_LSB, calibData[18]);
-    writeByte(eBNO055_REGISTER_ACC_RADIUS_MSB, calibData[19]);
-
-    writeByte(eBNO055_REGISTER_MAG_RADIUS_LSB, calibData[20]);
-    writeByte(eBNO055_REGISTER_MAG_RADIUS_MSB, calibData[21]);
-
-    setOpMode(modeback);
-}
-
-void DFRobot_BNO055::setSensorOffsets(const DFRobotBNO055_offsets_t &offsets_type)
-{
-    eBNO055Mode_t modeback = _mode;
-    setOpMode(eCONFIGMODE);
-    delay(25);
-
-    /* Note: Configuration will take place only when user writes to the last
-       byte of each config data pair (ex. ACCEL_OFFSET_Z_MSB_ADDR, etc.).
-       Therefore the last byte must be written whenever the user wants to
-       changes the configuration. */
-
-    writeByte(eBNO055_REGISTER_ACC_OFFSET_X_LSB, (offsets_type.accel_offset_x) & 0x0FF);
-    writeByte(eBNO055_REGISTER_ACC_OFFSET_X_MSB, (offsets_type.accel_offset_x >> 8) & 0x0FF);
-    writeByte(eBNO055_REGISTER_ACC_OFFSET_Y_LSB, (offsets_type.accel_offset_y) & 0x0FF);
-    writeByte(eBNO055_REGISTER_ACC_OFFSET_Y_MSB, (offsets_type.accel_offset_y >> 8) & 0x0FF);
-    writeByte(eBNO055_REGISTER_ACC_OFFSET_Z_LSB, (offsets_type.accel_offset_z) & 0x0FF);
-    writeByte(eBNO055_REGISTER_ACC_OFFSET_Z_MSB, (offsets_type.accel_offset_z >> 8) & 0x0FF);
-
-    writeByte(eBNO055_REGISTER_MAG_OFFSET_X_LSB, (offsets_type.mag_offset_x) & 0x0FF);
-    writeByte(eBNO055_REGISTER_MAG_OFFSET_X_MSB, (offsets_type.mag_offset_x >> 8) & 0x0FF);
-    writeByte(eBNO055_REGISTER_MAG_OFFSET_Y_LSB, (offsets_type.mag_offset_y) & 0x0FF);
-    writeByte(eBNO055_REGISTER_MAG_OFFSET_Y_MSB, (offsets_type.mag_offset_y >> 8) & 0x0FF);
-    writeByte(eBNO055_REGISTER_MAG_OFFSET_Z_LSB, (offsets_type.mag_offset_z) & 0x0FF);
-    writeByte(eBNO055_REGISTER_MAG_OFFSET_Z_MSB, (offsets_type.mag_offset_z >> 8) & 0x0FF);
-
-    writeByte(eBNO055_REGISTER_GYR_OFFSET_X_LSB, (offsets_type.gyro_offset_x) & 0x0FF);
-    writeByte(eBNO055_REGISTER_GYR_OFFSET_X_MSB, (offsets_type.gyro_offset_x >> 8) & 0x0FF);
-    writeByte(eBNO055_REGISTER_GYR_OFFSET_Y_LSB, (offsets_type.gyro_offset_y) & 0x0FF);
-    writeByte(eBNO055_REGISTER_GYR_OFFSET_Y_MSB, (offsets_type.gyro_offset_y >> 8) & 0x0FF);
-    writeByte(eBNO055_REGISTER_GYR_OFFSET_Z_LSB, (offsets_type.gyro_offset_z) & 0x0FF);
-    writeByte(eBNO055_REGISTER_GYR_OFFSET_Z_MSB, (offsets_type.gyro_offset_z >> 8) & 0x0FF);
-
-    writeByte(eBNO055_REGISTER_ACC_RADIUS_LSB, (offsets_type.accel_radius) & 0x0FF);
-    writeByte(eBNO055_REGISTER_ACC_RADIUS_MSB, (offsets_type.accel_radius >> 8) & 0x0FF);
-
-    writeByte(eBNO055_REGISTER_MAG_RADIUS_LSB, (offsets_type.mag_radius) & 0x0FF);
-    writeByte(eBNO055_REGISTER_MAG_RADIUS_MSB, (offsets_type.mag_radius >> 8) & 0x0FF);
-
-    setOpMode(modeback);
-}
-
-void DFRobot_BNO055::readEuler()
-{ 
-  uint8_t xHigh=0, xLow=0, yLow, yHigh, zLow,zHigh;
-
-    Wire.beginTransmission(address);
-    /* Make sure to set address auto-increment bit */
-    Wire.write(eBNO055_REGISTER_EUL_DATA_X_LSB);
-    Wire.endTransmission();
-    Wire.requestFrom(address, (byte)6);
-    
-    xLow  = Wire.read();
-    xHigh = Wire.read();
-    yLow  = Wire.read();
-    yHigh = Wire.read();
-    zLow  = Wire.read();
-    zHigh = Wire.read();
-
-    /* Shift values to create properly formed integer (low byte first) */
-    /* 1 degree = 16 LSB  1radian = 900 LSB   */
-    EulerAngles.x = (int16_t)(xLow | (xHigh << 8)) / 15.800;
-    EulerAngles.y = (int16_t)(yLow | (yHigh << 8)) / 15.800;
-    EulerAngles.z = -(int16_t)(zLow | (zHigh << 8)) / 15.800;
-
-    if(EulerAngles.x > 360)  EulerAngles.x =  360;
-    if(EulerAngles.y < -90)  EulerAngles.y =  -90;
-    if(EulerAngles.y > 90)   EulerAngles.y =   90;
-    if(EulerAngles.z > 180)  EulerAngles.z =  180;
-    if(EulerAngles.z < -180) EulerAngles.z = -180;
-}
-
-void DFRobot_BNO055::readAngularVelocity()
-{ 
-  uint8_t xHigh, xLow, yLow, yHigh, zLow,zHigh;
-
-    Wire.beginTransmission(address);
-    /* Make sure to set address auto-increment bit */
-    Wire.write(eBNO055_REGISTER_GYR_DATA_X_LSB);
-    Wire.endTransmission();
-    Wire.requestFrom(address, (byte)6);
-    
-    xLow  = Wire.read();
-    xHigh = Wire.read();
-    yLow  = Wire.read();
-    yHigh = Wire.read();
-    zLow  = Wire.read();
-    zHigh = Wire.read();
-
-    /* Shift values to create properly formed integer (low byte first) */
-    /* 1 degree = 16 LSB  1radian = 900 LSB   */
-    GyrData.x = (int16_t)(xLow | (xHigh << 8)) / 15.800;
-    GyrData.y = (int16_t)(yLow | (yHigh << 8)) / 15.800;
-    GyrData.z = (int16_t)(zLow | (zHigh << 8)) / 15.800;
-}
-
-void DFRobot_BNO055::readLinAcc()
-{
-    uint8_t xHigh, xLow, yLow, yHigh, zLow,zHigh;
-    
-    Wire.beginTransmission(address);
-    /* Make sure to set address auto-increment bit  */
-    Wire.write(eBNO055_REGISTER_LIA_DATA_X_LSB);
-    Wire.endTransmission();
-    Wire.requestFrom(address, (byte)6);
-    
-    xLow = Wire.read();
-    xHigh = Wire.read();
-    yLow = Wire.read();
-    yHigh = Wire.read();
-    zLow = Wire.read();
-    zHigh = Wire.read();
-    
-    /* Shift values to create properly formed integer (low byte first) */
-    /*1m/s2=100LSB        1mg=1LSB*/
-    LinAccData.x = (int16_t)(xLow | (xHigh << 8))/100.0;
-    LinAccData.y = (int16_t)(yLow | (yHigh << 8))/100.0;
-    LinAccData.z = (int16_t)(zLow | (zHigh << 8))/100.0;
-    
-}
-
-void DFRobot_BNO055::readAcc()
-{
-    uint8_t xHigh, xLow, yLow, yHigh, zLow,zHigh;
-    
-    Wire.beginTransmission(address);
-    /* Make sure to set address auto-increment bit  */
-    Wire.write(eBNO055_REGISTER_ACC_DATA_X_LSB);
-    Wire.endTransmission();
-    Wire.requestFrom(address, (byte)6);
-    
-    xLow = Wire.read();
-    xHigh = Wire.read();
-    yLow = Wire.read();
-    yHigh = Wire.read();
-    zLow = Wire.read();
-    zHigh = Wire.read();
-    
-    /* Shift values to create properly formed integer (low byte first) */
-    /*1m/s2=100LSB        1mg=1LSB*/
-    AccData.x = (int16_t)(xLow | (xHigh << 8))/100.0;
-    AccData.y = (int16_t)(yLow | (yHigh << 8))/100.0;
-    AccData.z = (int16_t)(zLow | (zHigh << 8))/100.0;
-    
-}
-
-void DFRobot_BNO055::readQua()
-{
-    uint8_t wHigh, wLow, xHigh, xLow, yLow, yHigh, zLow,zHigh;
-    
-    Wire.beginTransmission(address);
-    /* Make sure to set address auto-increment bit */
-    Wire.write(eBNO055_REGISTER_QUA_DATA_W_LSB);
-    Wire.endTransmission();
-    Wire.requestFrom(address, (byte)8);
-    
-    wLow = Wire.read();
-    wHigh = Wire.read();
-    xLow = Wire.read();
-    xHigh = Wire.read();
-    yLow = Wire.read();
-    yHigh = Wire.read();
-    zLow = Wire.read();
-    zHigh = Wire.read();
-    
-    /* Shift values to create properly formed integer (low byte first) then scale (1qua=2^14lsb) */
-    QuaData.w = (int16_t)(wLow | (wHigh << 8))/16384.0;
-    QuaData.x = (int16_t)(xLow | (xHigh << 8))/16384.0;
-    QuaData.y = (int16_t)(yLow | (yHigh << 8))/16384.0;
-    QuaData.z = (int16_t)(zLow | (zHigh << 8))/16384.0;
-
-    
-}
-/* uses last loaded QuaData and LinAccData. */
-void DFRobot_BNO055::calcAbsLinAcc()  
-{
-    float a1,b1,c1, d1, a2, b2, c2, d2, ra,rb,rc,rd,den; 
-    
-    /*  stuff my quaternions and acceleration vectors into some variables to operate on them
-        specifically calc q^-1.  Note, sensor seems to send the inverse.  */
-    readLinAcc();
-    readQua();
-    den=  pow(QuaData.w,2)+pow(QuaData.x,2)+pow(QuaData.y,2)+pow(QuaData.z,2); 
-
-    if (den<1.01 && den>.99)  /*close enough lets save some processing  */
-    {
-        a1=QuaData.w;
-        b1=QuaData.x;   
-        c1=QuaData.y;   
-        d1=QuaData.z;  
-       
-    }else{ 
-        a1=QuaData.w/den;
-        b1=QuaData.x/den;  
-        c1=QuaData.y/den;   
-        d1=QuaData.z/den;   
-    }
-    /* load accel vector V  */
-    a2=0;
-    b2=LinAccData.x;
-    c2=LinAccData.y;
-    d2=LinAccData.z;
-    
-    /* time to Hamilton it up! (q^-1 * V) */
-    ra=a1*a2-b1*b2-c1*c2-d1*d2;
-    rb=a1*b2 + b1*a2 + c1*d2 - d1*c2;
-    rc=a1*c2 - b1*d2 + c1*a2 + d1*b2;
-    rd=a1*d2 + b1*c2 - c1*b2 + d1*a2;
-    
-    /* swap some vars
-       first invert q */
-    a2=a1;
-    b2=-b1;
-    c2=-c1;
-    d2=-d1;
-    /* now move the result */
-    a1=ra;
-    b1=rb;
-    c1=rc;
-    d1=rd;
-
-    /* Hamilton it up again! (result*q) */
-    ra=a1*a2-b1*b2-c1*c2-d1*d2;
-    rb=a1*b2 + b1*a2 + c1*d2 - d1*c2;
-    rc=a1*c2 - b1*d2 + c1*a2 + d1*b2;
-    rd=a1*d2 + b1*c2 - c1*b2 + d1*a2;
-
-    AbsLinAccData.x = rb;
-    AbsLinAccData.y = rc;
-    AbsLinAccData.z = rd;
-}
-
-void DFRobot_BNO055::getInfo()
-{
-   SystemStatusCode = readByte(eBNO055_REGISTER_SYS_STATUS);
-   SelfTestStatus = readByte(eBNO055_REGISTER_ST_RESULT);
-   SystemError = readByte(eBNO055_REGISTER_SYS_ERR);
-}
-
-void DFRobot_BNO055::writeByte(eBNO055Registers_t reg, byte value)
-{
-    Wire.beginTransmission(address);
-    Wire.write((byte)reg);
-    Wire.write(value);
-    Wire.endTransmission();
-}
-
-byte DFRobot_BNO055::readByte(eBNO055Registers_t reg)
-{
-  byte value;
-  
-  Wire.beginTransmission(address);
-  Wire.write((byte)reg);
-  Wire.endTransmission();
-
-  Wire.requestFrom(address, (byte)1);
-  value = Wire.read();
-
-  return value;
-}
-bool DFRobot_BNO055::readByteLen(eBNO055Registers_t reg, byte * buffer, uint8_t len)
-{
-  Wire.beginTransmission(address);
-  #if ARDUINO >= 100
-    Wire.write((uint8_t)reg);
-  #else
-    Wire.send(reg);
-  #endif
-  Wire.endTransmission();
-  Wire.requestFrom(address, (byte)len);
-
-  for (uint8_t i = 0; i < len; i++)
-  {
-    #if ARDUINO >= 100
-      buffer[i] = Wire.read();
-    #else
-      buffer[i] = Wire.receive();
-    #endif
+  switch(eAxis) {
+  case DFRobot_BNO055::eAxisAcc: return regOffset0(sRegsPage0.ACC_DATA);
+  case DFRobot_BNO055::eAxisMag: return regOffset0(sRegsPage0.MAG_DATA);
+  case DFRobot_BNO055::eAxisGyr: return regOffset0(sRegsPage0.GYR_DATA);
+  case DFRobot_BNO055::eAxisLia: return regOffset0(sRegsPage0.LIA_DATA);
+  case DFRobot_BNO055::eAxisGrv: return regOffset0(sRegsPage0.GRV_DATA);
+  default: return 0;
   }
-
-  return true;
 }
 
+DFRobot_BNO055::sAxisAnalog_t DFRobot_BNO055::getAxis(eAxis_t eAxis)
+{
+  sAxisData_t   sRaw = getAxisRaw(eAxis);
+  sAxisAnalog_t sAnalog = {0};
+  float   factor = 1.0f;
 
+  switch (eAxis) {
+  // shift accelerometer, gravity vector and linear acceleration data: 1m/s2 = 100lsb, 1mg = 1lsb
+  case eAxisAcc: factor = 1.0f; break;
+  case eAxisLia: factor = 1.0f; break;
+  case eAxisGrv: factor = 1.0f; break;
+  // shift magnetometer data: 1ut = 16lsb
+  case eAxisMag: factor = 16.0f; break;
+  // shift gyroscope data: 1dps = 16lsb, 1rps = 900lsb
+  case eAxisGyr: factor = 16.0f; break;
+  default: lastOpreateStatus = eStatusErrParameter; break;
+  }
+  sAnalog.x = sRaw.x / factor;
+  sAnalog.y = sRaw.y / factor;
+  sAnalog.z = sRaw.z / factor;
+  return sAnalog;
+}
 
+DFRobot_BNO055::sEulAnalog_t DFRobot_BNO055::getEul()
+{
+  sEulData_t    sEul = getEulRaw();
+  sEulAnalog_t  sEulAnalog = {0};
+  // shift euler data: 1degree = 16lsb, 1radians = 900lsb
+  sEulAnalog.head = sEul.head / 16.0f;
+  sEulAnalog.roll = sEul.roll / 16.0f;
+  sEulAnalog.pitch = sEul.pitch / 16.0f;
+  return sEulAnalog;
+}
+
+DFRobot_BNO055::sQuaAnalog_t DFRobot_BNO055::getQua()
+{
+  sQuaData_t    sQua = getQuaRaw();
+  sQuaAnalog_t  sQuaAnalog = {0};
+  // shift quaternion data: 1qua = 2^14 lsb
+  sQuaAnalog.w = sQua.w / 16384.0f;
+  sQuaAnalog.x = sQua.x / 16384.0f;
+  sQuaAnalog.y = sQua.y / 16384.0f;
+  sQuaAnalog.z = sQua.z / 16384.0f;
+  return sQuaAnalog;
+}
+
+// get register offset of offset
+uint8_t getOffsetOfOffset(DFRobot_BNO055::eAxis_t eAxis)
+{
+  switch(eAxis) {
+  case DFRobot_BNO055::eAxisAcc: return regOffset0(sRegsPage0.ACC_OFFSET);
+  case DFRobot_BNO055::eAxisMag: return regOffset0(sRegsPage0.MAG_OFFSET);
+  case DFRobot_BNO055::eAxisGyr: return regOffset0(sRegsPage0.GYR_OFFSET);
+  default: return 0;
+  }
+}
+
+// set data functions ----------------------------------------------------------------
+
+void DFRobot_BNO055::setAxisOffset(eAxis_t eAxis, sAxisAnalog_t sOffset)
+{
+  uint8_t   offset = getOffsetOfOffset(eAxis);
+  float     factor = 0;
+  uint16_t  maxValue = 0;
+
+  switch(eAxis) {
+  // shift accelerometer data: 1m/s2 = 100lsb, 1mg = 1lsb
+  case eAxisAcc: {
+    factor = 1.0f;
+    switch(_eAccRange) {
+    case eAccRange_2G: maxValue = 2000; break;
+    case eAccRange_4G: maxValue = 4000; break;
+    case eAccRange_8G: maxValue = 8000; break;
+    case eAccRange_16G: maxValue = 16000; break;
+    }
+  } break;
+  // shift magnetometer data: 1ut = 16lsb
+  case eAxisMag: factor = 16.0f; maxValue = 1300; break;
+  // shift gyroscope data: 1dps = 16lsb, 1rps = 900lsb
+  case eAxisGyr: {
+    factor = 16.0f;
+    switch(_eGyrRange) {
+    case eGyrRange_2000: maxValue = 2000; break;
+    case eGyrRange_1000: maxValue = 1000; break;
+    case eGyrRange_500: maxValue = 500; break;
+    case eGyrRange_250: maxValue = 250; break;
+    case eGyrRange_125: maxValue = 125; break;
+    }
+  } break;
+  default: lastOpreateStatus = eStatusErrParameter; break;
+  }
+  if(eAxis == eAxisGyr) {
+    if((offset == 0) || (abs(sOffset.x) > maxValue) || (abs(sOffset.y) > maxValue) || (abs(sOffset.z) > 2500)) {
+      lastOpreateStatus = eStatusErrParameter;
+      return;
+    }
+  } else if((offset == 0) || (abs(sOffset.x) > maxValue) || (abs(sOffset.y) > maxValue) || (abs(sOffset.z) > maxValue)) {
+    lastOpreateStatus = eStatusErrParameter;
+    return;
+  }
+  sAxisData_t   sAxisData;
+  sAxisData.x = sOffset.x * factor;
+  sAxisData.y = sOffset.y * factor;
+  sAxisData.z = sOffset.z * factor;
+  setToPage(0);
+  writeReg(offset, (uint8_t*) &sAxisData, sizeof(sAxisData));
+}
+
+void DFRobot_BNO055::setOprMode(eOprMode_t eMode)
+{
+  sRegOprMode_t   sRegFlied = {0}, sRegVal = {0};
+  sRegFlied.mode = 0xff; sRegVal.mode = eMode;
+  writeRegBitsHelper(0, sRegsPage0.OPR_MODE, sRegFlied, sRegVal);
+}
+
+void DFRobot_BNO055::setPowerMode(ePowerMode_t eMode)
+{
+  sRegPowerMode_t   sRegFlied = {0}, sRegVal = {0};
+  sRegFlied.mode = 0xff; sRegVal.mode = eMode;
+  writeRegBitsHelper(0, sRegsPage0.PWR_MODE, sRegFlied, sRegVal);
+}
+
+void DFRobot_BNO055::reset()
+{
+  sRegSysTrigger_t    sRegFlied = {0}, sRegVal = {0};
+  sRegFlied.RST_SYS = 0xff; sRegVal.RST_SYS = 1;
+  writeRegBitsHelper(0, sRegsPage0.SYS_TRIGGER, sRegFlied, sRegVal);
+}
+
+void DFRobot_BNO055::setAccRange(eAccRange_t eRange)
+{
+  sRegAccConfig_t   sRegFlied = {0}, sRegVal = {0};
+  sRegFlied.ACC_RANGE = 0xff; sRegVal.ACC_RANGE = eRange;
+  writeRegBitsHelper(1, sRegsPage1.ACC_CONFIG, sRegFlied, sRegVal);
+  if(lastOpreateStatus == eStatusOK)
+    _eAccRange = eRange;
+}
+
+void DFRobot_BNO055::setAccBandWidth(eAccBandWidth_t eBand)
+{
+  sRegAccConfig_t   sRegFlied = {0}, sRegVal = {0};
+  sRegFlied.ACC_BW = 0xff; sRegVal.ACC_BW = eBand;
+  writeRegBitsHelper(1, sRegsPage1.ACC_CONFIG, sRegFlied, sRegVal);
+}
+
+void DFRobot_BNO055::setAccPowerMode(eAccPowerMode_t eMode)
+{
+  sRegAccConfig_t   sRegFlied = {0}, sRegVal = {0};
+  sRegFlied.ACC_PWR_MODE = 0xff; sRegVal.ACC_PWR_MODE = eMode;
+  writeRegBitsHelper(1, sRegsPage1.ACC_CONFIG, sRegFlied, sRegVal);
+}
+
+void DFRobot_BNO055::setMagDataRate(eMagDataRate_t eRate)
+{
+  sRegMagConfig_t   sRegFlied = {0}, sRegVal = {0};
+  sRegFlied.MAG_DATA_OUTPUT_RATE = 0xff; sRegVal.MAG_DATA_OUTPUT_RATE = eRate;
+  writeRegBitsHelper(1, sRegsPage1.MAG_CONFIG, sRegFlied, sRegVal);
+}
+
+void DFRobot_BNO055::setMagOprMode(eMagOprMode_t eMode)
+{
+  sRegMagConfig_t   sRegFlied = {0}, sRegVal = {0};
+  sRegFlied.MAG_OPR_MODE = 0xff; sRegVal.MAG_OPR_MODE = eMode;
+  writeRegBitsHelper(1, sRegsPage1.MAG_CONFIG, sRegFlied, sRegVal);
+}
+
+void DFRobot_BNO055::setMagPowerMode(eMagPowerMode_t eMode)
+{
+  sRegMagConfig_t   sRegFlied = {0}, sRegVal = {0};
+  sRegFlied.MAG_POWER_MODE = 0xff; sRegVal.MAG_POWER_MODE = eMode;
+  writeRegBitsHelper(1, sRegsPage1.MAG_CONFIG, sRegFlied, sRegVal);
+}
+
+void DFRobot_BNO055::setGyrRange(eGyrRange_t eRange)
+{
+  sRegGyrConfig0_t    sRegFlied = {0}, sRegVal = {0};
+  sRegFlied.GYR_RANGE = 0xff; sRegVal.GYR_RANGE = eRange;
+  writeRegBitsHelper(1, sRegsPage1.GYR_CONFIG0, sRegFlied, sRegVal);
+  if(lastOpreateStatus == eStatusOK)
+    _eGyrRange = eRange;
+}
+
+void DFRobot_BNO055::setGyrBandWidth(eGyrBandWidth_t eBandWidth)
+{
+  sRegGyrConfig0_t    sRegFlied = {0}, sRegVal = {0};
+  sRegFlied.GYR_BANDWIDTH = 0xff; sRegVal.GYR_BANDWIDTH = eBandWidth;
+  writeRegBitsHelper(1, sRegsPage1.GYR_CONFIG0, sRegFlied, sRegVal);
+}
+
+void DFRobot_BNO055::setGyrPowerMode(eGyrPowerMode_t eMode)
+{
+  sRegGyrConfig1_t    sRegFlied = {0}, sRegVal = {0};
+  sRegFlied.GYR_POWER_MODE = 0xff; sRegVal.GYR_POWER_MODE = eMode;
+  writeRegBitsHelper(1, sRegsPage1.GYR_CONFIG1, sRegFlied, sRegVal);
+}
+
+uint8_t DFRobot_BNO055::getIntState()
+{
+  sRegIntSta_t    sInt;
+  sRegSysTrigger_t    sTrigFlied, sTrigVal;
+  setToPage(0);
+  readReg(regOffset0(sRegsPage0.INT_STA), (uint8_t*) &sInt, sizeof(sInt));
+  __DBG(Serial.print("int state: "); Serial.print(*(uint8_t*) &sInt, HEX));
+
+  sTrigFlied.RST_INT = 0xff; sTrigVal.RST_INT = 1;
+  writeRegBitsHelper(0, sRegsPage0.SYS_TRIGGER, sTrigFlied, sTrigVal);
+  return *(uint8_t*) &sInt;
+}
+
+void DFRobot_BNO055::setIntMaskEnable(eInt_t eInt)
+{
+  uint8_t   temp;
+  setToPage(1);
+  readReg(regOffset1(sRegsPage1.INT_MASK), (uint8_t*) &temp, sizeof(temp));
+  temp |= eInt;
+  writeReg(regOffset1(sRegsPage1.INT_MASK), (uint8_t*) &temp, sizeof(temp));
+}
+
+void DFRobot_BNO055::setIntMaskDisable(eInt_t eInt)
+{
+  uint8_t   temp;
+  setToPage(1);
+  readReg(regOffset1(sRegsPage1.INT_MASK), (uint8_t*) &temp, sizeof(temp));
+  temp &= ~ eInt;
+  writeReg(regOffset1(sRegsPage1.INT_MASK), (uint8_t*) &temp, sizeof(temp));
+}
+
+void DFRobot_BNO055::setIntEnable(eInt_t eInt)
+{
+  uint8_t   temp;
+  setToPage(1);
+  readReg(regOffset1(sRegsPage1.INT_EN), (uint8_t*) &temp, sizeof(temp));
+  temp |= eInt;
+  writeReg(regOffset1(sRegsPage1.INT_EN), (uint8_t*) &temp, sizeof(temp));
+}
+
+void DFRobot_BNO055::setIntDisable(eInt_t eInt)
+{
+  uint8_t   temp;
+  setToPage(1);
+  readReg(regOffset1(sRegsPage1.INT_EN), (uint8_t*) &temp, sizeof(temp));
+  temp &= ~ eInt;
+  writeReg(regOffset1(sRegsPage1.INT_EN), (uint8_t*) &temp, sizeof(temp));
+}
+
+void DFRobot_BNO055::setAccAmThres(uint16_t thres)
+{
+  uint8_t   temp = mapAccThres(thres);
+  if(lastOpreateStatus != eStatusOK)
+    return;
+  writeReg(regOffset1(sRegsPage1.ACC_AM_THRES), (uint8_t*) &temp, sizeof(temp));
+}
+
+void DFRobot_BNO055::setAccIntAmDur(uint8_t dur)
+{
+  sRegAccIntSet_t    sRegFleid = {0}, sRegVal = {0};
+  if((dur > 4) || (dur << 1)) {
+    lastOpreateStatus = eStatusErrParameter;
+    return;
+  }
+  sRegFleid.AM_DUR = 0xff; sRegVal.AM_DUR = dur - 1;
+  writeRegBitsHelper(1, sRegsPage1.ACC_INT_SETTINGS, sRegFleid, sRegVal);
+}
+
+void DFRobot_BNO055::setAccIntEnable(eAccIntSet_t eInt)
+{
+  uint8_t   temp;
+  setToPage(1);
+  readReg(regOffset1(sRegsPage1.ACC_INT_SETTINGS), (uint8_t*) &temp, sizeof(temp));
+  temp |= eInt;
+  writeReg(regOffset1(sRegsPage1.ACC_INT_SETTINGS), (uint8_t*) &temp, sizeof(temp));
+}
+
+void DFRobot_BNO055::setAccIntDisable(eAccIntSet_t eInt)
+{
+  uint8_t   temp;
+  setToPage(1);
+  readReg(regOffset1(sRegsPage1.ACC_INT_SETTINGS), (uint8_t*) &temp, sizeof(temp));
+  temp &= ~ eInt;
+  writeReg(regOffset1(sRegsPage1.ACC_INT_SETTINGS), (uint8_t*) &temp, sizeof(temp));
+}
+
+void DFRobot_BNO055::setAccHighGDuration(uint16_t dur)
+{
+  if((dur < 2) || (dur > 512)) {
+    lastOpreateStatus = eStatusErrParameter;
+    return;
+  }
+  uint8_t   temp = dur / 2;
+  setToPage(1);
+  writeReg(regOffset1(sRegsPage1.ACC_HG_THRES), (uint8_t*) temp, sizeof(temp));
+}
+
+void DFRobot_BNO055::setAccHighGThres(uint16_t thres)
+{
+  uint8_t   temp = mapAccThres(thres);
+  if(lastOpreateStatus != eStatusOK)
+    return;
+  writeReg(regOffset1(sRegsPage1.ACC_HG_THRES), (uint8_t*) &temp, sizeof(temp));
+}
+
+void DFRobot_BNO055::setAccNmThres(uint16_t thres)
+{
+  uint8_t   temp = mapAccThres(thres);
+  if(lastOpreateStatus != eStatusOK)
+    return;
+  writeReg(regOffset1(sRegsPage1.ACC_NM_THRES), (uint8_t*) &temp, sizeof(temp));
+}
+
+void DFRobot_BNO055::setAccNmSet(eAccNmSmnm_t eSmnm, uint16_t dur)
+{
+  sRegAccNmSet_t    sReg;
+  uint8_t   temp = 0;
+  if(dur > 336) {
+    lastOpreateStatus = eStatusErrParameter;
+    return;
+  }
+  sReg.SMNM = eSmnm;
+  /*
+   * more detail in datasheet page 85
+   *
+   * ACC_NM_SET
+   * -----------------------------------------
+   * | b7 | b6 | b5 | b4 | b3 | b2 | b1 | b0 |
+   * -----------------------------------------
+   * |    |  slo_no_mot_dur <5:0>       |Smnm|
+   * -----------------------------------------
+   *
+   * slow / no motion duration = snmd (unit seconds)
+   * if slo_no_mot_dur<5:4> == 0b00, then snmd = slo_no_mot_dur<3:0> + 1
+   * if slo_no_mot_dur<5:4> == 0b01, then snmd = slo_no_mot_dur<3:0> * 4 + 20
+   * if slo_no_mot_dur<5:5> == 0b1, then snmd = slo_no_mot_dur<4:0> * 8 + 88
+   */
+  if(dur < 17) {
+    temp = dur - 1;
+  } else if(dur < 80) {
+    temp |= (0x01 << 4);
+    if(dur > 20)
+      temp |= (dur - 20) / 4;
+  } else {
+    temp |= (0x01 << 5);
+    if(dur > 88)
+      temp |= (dur - 88) / 8;
+  }
+  sReg.NO_SLOW_MOTION_DURATION = temp;
+  setToPage(1);
+  writeReg(regOffset1(sRegsPage1.ACC_NM_SET), (uint8_t*) &sReg, sizeof(sReg));
+}
+
+void DFRobot_BNO055::setGyrIntEnable(eGyrIntSet_t eInt)
+{
+  uint8_t   temp;
+  setToPage(1);
+  readReg(regOffset1(sRegsPage1.GYR_INT_SETTING), (uint8_t*) temp, sizeof(temp));
+  temp |= eInt;
+  writeReg(regOffset1(sRegsPage1.GYR_INT_SETTING), (uint8_t*) temp, sizeof(temp));
+}
+
+void DFRobot_BNO055::setGyrIntDisable(eGyrIntSet_t eInt)
+{
+  uint8_t   temp;
+  setToPage(1);
+  readReg(regOffset1(sRegsPage1.GYR_INT_SETTING), (uint8_t*) temp, sizeof(temp));
+  temp &= ~ eInt;
+  writeReg(regOffset1(sRegsPage1.GYR_INT_SETTING), (uint8_t*) temp, sizeof(temp));
+}
+
+void DFRobot_BNO055::setGyrHrSet(eSingleAxis_t eSingleAxis, uint16_t thres, uint16_t dur)
+{
+  uint8_t   hysteresis = 1;
+  mapGyrHrThres(&hysteresis, &thres, &dur);
+  hysteresis = 0;   // function not yet understood, temporarily used 1
+  if(lastOpreateStatus != eStatusOK)
+    return;
+  uint8_t   reg = regOffset1(sRegsPage1.GYR_HR_X_SET);    // get reg offset head
+  reg += eSingleAxis * 2;                                 // calculate offset
+  sRegGyrHrSet_t    sReg;
+  uint8_t   temp = dur;
+  sReg.HR_THRESHOLD = thres;
+  sReg.HR_THRES_HYST = hysteresis;
+  __DBG(Serial.print("thresHold: "); Serial.print(sReg.HR_THRESHOLD); Serial.print(" reg addr: "); Serial.print(reg, HEX));
+  writeReg(reg, (uint8_t*) &sReg, sizeof(sReg));
+  writeReg(reg + 1, (uint8_t*) &temp, sizeof(temp));
+}
+
+void DFRobot_BNO055::setGyrAmThres(uint8_t thres)
+{
+  mapGyrAmThres(&thres);
+  if(lastOpreateStatus != eStatusOK)
+    return;
+  setToPage(1);
+  writeReg(regOffset1(sRegsPage1.GYR_AM_THRES), (uint8_t*) &thres, sizeof(thres));
+}
+
+// protected functions ----------------------------------------------------------------
+
+uint8_t DFRobot_BNO055::getReg(uint8_t reg, uint8_t pageId)
+{
+  uint8_t   temp;
+  setToPage(pageId);
+  readReg(reg, &temp, sizeof(temp));
+  return temp;
+}
+
+void DFRobot_BNO055::setToPage(uint8_t pageId)
+{
+  if(_currentPage != pageId) {
+    writeReg(regOffset0(sRegsPage0.PAGE_ID), &pageId, sizeof(pageId));
+    if(lastOpreateStatus == eStatusOK) {
+      _currentPage = pageId;
+    }
+  }
+}
+
+void DFRobot_BNO055::setUnit()
+{
+  sRegUnitSel_t   sReg;
+  sReg.ACC = 1;   // 0: m/s^2, 1: mg
+  sReg.EUL = 0;   // 0: degrees, 1: radians
+  sReg.GYR = 0;   // 0: dps, 1: rps
+  sReg.ORI_ANDROID_WINDOWS = 0;   // 0: windows, 1: android
+  sReg.TEMP = 0;  // 0: celsius, 1: fahrenheit
+  setToPage(0);
+  writeReg(regOffset0(sRegsPage0.UNIT_SEL), (uint8_t*) &sReg, sizeof(sReg));
+}
+
+void DFRobot_BNO055::writeRegBits(uint8_t reg, uint8_t flied, uint8_t val)
+{
+  uint8_t   regVal;
+  readReg(reg, &regVal, sizeof(regVal));
+  regVal &= ~flied;
+  regVal |= val;
+  writeReg(reg, &regVal, sizeof(regVal));
+}
+
+/*
+ * value is dependent on accelerometer range selected
+ * --------------------------
+ * |  range  |  1lsb = ?mg  |
+ * --------------------------
+ * |  2g     |  3.91        |
+ * |  4g     |  7.81        |
+ * |  8g     |  15.63       |
+ * |  16g    |  31.25       |
+ * --------------------------
+ */
+uint16_t DFRobot_BNO055::mapAccThres(uint16_t thres)
+{
+  sRegAccConfig_t   sReg;
+  setToPage(1);
+  readReg(regOffset1(sRegsPage1.ACC_CONFIG), (uint8_t*) &sReg, sizeof(sReg));
+  if(lastOpreateStatus != eStatusOK)
+    return 0;
+  switch(sReg.ACC_RANGE) {
+  case eAccRange_2G: {
+    if(thres > (255.0f * 3.91f)) { lastOpreateStatus = eStatusErrParameter; }
+    else { thres /= 3.91f; }
+  } break;
+  case eAccRange_4G: {
+    if(thres > (255.0f * 7.81f)) { lastOpreateStatus = eStatusErrParameter; }
+    else { thres /= 7.81f; }
+  } break;
+  case eAccRange_8G: {
+    if(thres > (255.0f * 15.63f)) { lastOpreateStatus = eStatusErrParameter; }
+    else { thres /= 15.63f; }
+  } break;
+  case eAccRange_16G: {
+    if(thres > (255.0f * 31.25f)) { lastOpreateStatus = eStatusErrParameter; }
+    else { thres /= 31.25f; }
+  } break;
+  default: lastOpreateStatus = eStatusErrParameter; break;
+  }
+  if(lastOpreateStatus == eStatusErrParameter)
+    return 0;
+  return thres;
+}
+
+/*
+ * hysteresis value is dependent on gyroscope range selected
+ * -----------------------------------------
+ * |  range  |  1lsb = ? degree / seconds  |
+ * -----------------------------------------
+ * |  2000   |  62.26                      |
+ * |  1000   |  31.13                      |
+ * |  500    |  15.56                      |
+ * |  250    |  7.78                       |
+ * |  125    |  3.89                       |
+ * -----------------------------------------
+ *
+ * threshold value is dependent on gyroscope range selected
+ * -----------------------------------------
+ * |  range  |  1lsb = ? degree / seconds  |
+ * -----------------------------------------
+ * |  2000   |  62.5                       |
+ * |  1000   |  31.25                      |
+ * |  500    |  15.625                     |
+ * |  250    |  7.8125                     |
+ * |  125    |  3.90625                    |
+ * -----------------------------------------
+ *
+ * High rate duration to set, unit ms, duration from 2.5ms to 640ms
+ */
+void DFRobot_BNO055::mapGyrHrThres(uint8_t *pHysteresis, uint16_t *pThres, uint16_t *pDur)
+{
+  sRegGyrConfig0_t    sReg;
+  setToPage(1);
+  readReg(regOffset1(sRegsPage1.GYR_CONFIG0), (uint8_t*) &sReg, sizeof(sReg));
+  if(lastOpreateStatus != eStatusOK)
+    return;
+  if((*pDur < 3) || (*pDur > 640)) {
+    lastOpreateStatus = eStatusErrParameter;
+    return;
+  }
+  switch(sReg.GYR_RANGE) {
+  case eGyrRange_2000: {
+    if((*pHysteresis > (62.26f * 3.0f)) || (*pThres > (62.5f * 31.0f)))
+      lastOpreateStatus = eStatusErrParameter;
+    else {
+      *pHysteresis /= 62.26f;
+      *pThres /= 62.5f;
+    }
+  } break;
+  case eGyrRange_1000: {
+    if((*pHysteresis > (31.13f * 3.0f)) || (*pThres > (31.25f * 31.0f)))
+      lastOpreateStatus = eStatusErrParameter;
+    else {
+      *pHysteresis /= 31.13f;
+      *pThres /= 31.25f;
+    }
+  } break;
+  case eGyrRange_500: {
+    if((*pHysteresis > (15.56f * 3.0f)) || (*pThres > (15.625f * 31.0f)))
+      lastOpreateStatus = eStatusErrParameter;
+    else {
+      *pHysteresis /= 15.56f;
+      *pThres /= 3.0f;
+    }
+  } break;
+  case eGyrRange_250: {
+    if((*pHysteresis > (7.78f * 3.0f)) || (*pThres > (7.8125f * 31.0f)))
+      lastOpreateStatus = eStatusErrParameter;
+    else {
+      *pHysteresis /= 7.78f;
+      *pThres /= 7.8125f;
+    }
+  } break;
+  case eGyrRange_125: {
+    if((*pHysteresis > (3.89f * 3.0f)) || (*pThres > (3.90625f * 31.0f)))
+      lastOpreateStatus = eStatusErrParameter;
+    else {
+      *pHysteresis /= 3.89f;
+      *pThres /= 3.0f;
+    }
+  } break;
+  default: lastOpreateStatus = eStatusErrParameter; break;
+  }
+  if(lastOpreateStatus != eStatusErrParameter)
+    *pDur /= 2.5f;
+}
+
+/*
+ * threshold value is dependent on gyroscope range selected
+ * -----------------------------------------
+ * |  range  |  1lsb = ? degree / seconds  |
+ * -----------------------------------------
+ * |  2000   |  1                          |
+ * |  1000   |  0.5                        |
+ * |  500    |  0.25                       |
+ * |  250    |  0.125                      |
+ * |  125    |  0.0625                     |
+ * -----------------------------------------
+ */
+void DFRobot_BNO055::mapGyrAmThres(uint8_t *pThres)
+{
+  sRegGyrConfig0_t    sReg;
+  setToPage(1);
+  readReg(regOffset1(sRegsPage1.GYR_CONFIG0), (uint8_t*) &sReg, sizeof(sReg));
+  if(lastOpreateStatus != eStatusOK)
+    return;
+  switch(sReg.GYR_RANGE) {
+  case eGyrRange_2000: if(*pThres < (128.0f * 1.0f)) { *pThres /= 1.0f; } break;
+  case eGyrRange_1000: if(*pThres < (128.0f * 0.5f)) { *pThres /= 0.5f; } break;
+  case eGyrRange_500: if(*pThres < (128.0f * 0.25f)) { *pThres /= 0.25f; } break;
+  case eGyrRange_250: if(*pThres < (128.0f * 0.125f)) { *pThres /= 0.125f; } break;
+  case eGyrRange_125: if(*pThres < (128.0f * 0.0625f)) { *pThres /= 0.625f; } break;
+  }
+}
+
+DFRobot_BNO055::sAxisData_t DFRobot_BNO055::getAxisRaw(eAxis_t eAxis)
+{
+  uint8_t   offset = getOffsetOfData(eAxis);
+  sAxisData_t   sAxis = {0};
+  setToPage(0);
+  if(offset == 0)
+    lastOpreateStatus = eStatusErrParameter;
+  else
+    readReg(offset, (uint8_t*) &sAxis, sizeof(sAxis));
+  return sAxis;
+}
+
+DFRobot_BNO055::sEulData_t DFRobot_BNO055::getEulRaw()
+{
+  sEulData_t    sEul = {0};
+  setToPage(0);
+  readReg(regOffset0(sRegsPage0.EUL_DATA), (uint8_t*) &sEul, sizeof(sEul));
+  return sEul;
+}
+
+DFRobot_BNO055::sQuaData_t DFRobot_BNO055::getQuaRaw()
+{
+  sQuaData_t    sQua;
+  setToPage(0);
+  readReg(regOffset0(sRegsPage0.QUA_DATA), (uint8_t*) &sQua, sizeof(sQua));
+  return sQua;
+}
+
+// main class end ----------------------------------------------------------------
+
+// utils class start ----------------------------------------------------------------
+
+DFRobot_BNO055_IIC::DFRobot_BNO055_IIC(TwoWire *pWire, eCom3State_t eState)
+{
+  _pWire = pWire;
+  if(eState == eCom3High)
+    _addr = 0x29;  // sensor default address
+  else
+    _addr = 0x28;
+}
+
+void DFRobot_BNO055_IIC::readReg(uint8_t reg, uint8_t *pBuf, uint8_t len)
+{
+  lastOpreateStatus = eStatusErrDeviceNotDetect;
+  _pWire->begin();
+  _pWire->beginTransmission(_addr);
+  _pWire->write(reg);
+  if(_pWire->endTransmission() != 0)
+    return;
+
+  _pWire->requestFrom(_addr, len);
+  for(uint8_t i = 0; i < len; i ++)
+    pBuf[i] = _pWire->read();
+  lastOpreateStatus = eStatusOK;
+}
+
+void DFRobot_BNO055_IIC::writeReg(uint8_t reg, uint8_t *pBuf, uint8_t len)
+{
+  lastOpreateStatus = eStatusErrDeviceNotDetect;
+  _pWire->begin();
+  _pWire->beginTransmission(_addr);
+  _pWire->write(reg);
+  for(uint8_t i = 0; i < len; i ++)
+    _pWire->write(pBuf[i]);
+  if(_pWire->endTransmission() != 0)
+    return;
+  lastOpreateStatus = eStatusOK;
+}
+
+// utils class end ----------------------------------------------------------------

@@ -1,361 +1,879 @@
-/***************************************************************************
-  This is a library for the BNO055 orientation sensor
-  Designed specifically to work with the Adafruit BNO055 Breakout.
-  Pick one up today in the adafruit shop!
-  ------> https://www.adafruit.com/product/2472
-  These sensors use I2C to communicate, 2 pins are required to interface.
-  Adafruit invests time and resources providing this open source code,
-  please support Adafruit andopen-source hardware by purchasing products
-  from Adafruit!
-  Written by KTOWN for Adafruit Industries.
-  MIT license, all text above must be included in any redistribution
- ***************************************************************************/
-#ifndef __BNO055_H__
-#define __BNO055_H__
+/*
+ MIT License
 
-#if ARDUINO >= 100
- #include "Arduino.h"
-#else
- #include "WProgram.h"
+ Copyright (C) <2019> <@DFRobot Frank>
+
+　Permission is hereby granted, free of charge, to any person obtaining a copy of this
+　software and associated documentation files (the "Software"), to deal in the Software
+　without restriction, including without limitation the rights to use, copy, modify,
+　merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+　permit persons to whom the Software is furnished to do so.
+
+　The above copyright notice and this permission notice shall be included in all copies or
+　substantial portions of the Software.
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+ INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+ PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE
+ FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
+
+#ifndef DFROBOT_BNO055_H
+#define DFROBOT_BNO055_H
+
+#include "Arduino.h"
+#include "Wire.h"
+
+#ifndef PROGMEM
+#define PROGMEM
 #endif
 
-#include <Wire.h>
+// main class ----------------------------------------------------------------
+class DFRobot_BNO055 {
 
-#define BNO055_ADDRESS                (0x28)        /* 0x28 com3 low 0x29 com3 high     */
-#define BNO055_POLL_TIMEOUT           (100)         /* Maximum number of read attempts  */
-#define BNO055_ID                     (0xA0)        /* pg58                             */
-#define NUM_BNO055_OFFSET_REGISTERS   (22)
-typedef struct
-{
-    int16_t accel_offset_x;
-    int16_t accel_offset_y;
-    int16_t accel_offset_z;
-    int16_t mag_offset_x;
-    int16_t mag_offset_y;
-    int16_t mag_offset_z;
-    int16_t gyro_offset_x;
-    int16_t gyro_offset_y;
-    int16_t gyro_offset_z;
+// defines
+public:
+  /**
+   * @brief global axis declare (excepet eular and quaternion)
+   */
+  typedef enum {
+    eAxisAcc,
+    eAxisMag,
+    eAxisGyr,
+    eAxisLia,
+    eAxisGrv
+  } eAxis_t;
 
-    int16_t accel_radius;
-    int16_t mag_radius;
-} DFRobotBNO055_offsets_t;
-class DFRobot_BNO055
-{
-  public:
-    typedef enum
-    {                                   /*HW SENS POWER    SENS SIG         FUSION       */
-                                        /*  A   M   G       A   M   G       E   Q   L   G*/
-        eCONFIGMODE      = 0b00000000,   /*  y   y   y       n   n   n       n   n   n   n*/
-        eACCONLY         = 0b00000001,   /*  y   n   n       y   n   n       n   n   n   n*/
-        eMAGONLY         = 0b00000010,   /*  n   y   n       n   y   n       n   n   n   n*/
-        eGYROONLY        = 0b00000011,   /*  n   n   y       n   n   y       n   n   n   n*/
-        eACCMAG          = 0b00000100,   /*  y   y   n       y   y   n       n   n   n   n*/
-        eACCGYRO         = 0b00000101,   /*  y   n   y       y   n   y       n   n   n   n*/
-        eMAGGYRO         = 0b00000110,   /*  n   y   y       n   y   y       n   n   n   n*/
-        eAMG             = 0b00000111,   /*  y   y   y       y   y   y       n   n   n   n*/
-        eIMU             = 0b00001000,   /*  y   n   y       y   n   y       y   y   y   y*/
-        eCOMPASS         = 0b00001001,   /*  y   y   n       y   y   n       y   y   y   y*/
-        eM4G             = 0b00001010,   /*  y   y   n       y   y   y       y   y   y   y*/
-        eNDOF_FMC_OFF    = 0b00001011,   /*  y   y   y       y   y   y       y   y   y   y*/
-        eNDOF            = 0b00001100,   /*  y   y   y       y   y   y       y   y   y   y*/
-    } eBNO055Mode_t;
-    
-    typedef enum
-    {
-        eNORMAL_POWER_MODE     = 0b00000000,
-        eLOW_POWER_MODE        = 0b00000001,
-        eSUSPEND_POWER_MODE    = 0b00000010,
-    } eBNO055PowerModes_t;
-    
-    typedef enum
-    {
-        eFASTEST_MODE    = 0b00100000,
-        eGAME_MODE       = 0b01000000,
-        eUI_MODE         = 0b01100000,
-        eNORMAL_MODE     = 0b10000000,
-    } eBNO055DataRateMode_t;
-    
-    typedef enum
-    {
-      eREMAP_CONFIG_P0                                         = 0x21,
-      eREMAP_CONFIG_P1                                         = 0x24, // default
-      eREMAP_CONFIG_P2                                         = 0x24,
-      eREMAP_CONFIG_P3                                         = 0x21,
-      eREMAP_CONFIG_P4                                         = 0x24,
-      eREMAP_CONFIG_P5                                         = 0x21,
-      eREMAP_CONFIG_P6                                         = 0x21,
-      eREMAP_CONFIG_P7                                         = 0x24
-    } eBNO055AxisRemap_config_t;
-    typedef enum
-    {
-      eREMAP_SIGN_P0                                           = 0x04,
-      eREMAP_SIGN_P1                                           = 0x00, // default
-      eREMAP_SIGN_P2                                           = 0x06,
-      eREMAP_SIGN_P3                                           = 0x02,
-      eREMAP_SIGN_P4                                           = 0x03,
-      eREMAP_SIGN_P5                                           = 0x01,
-      eREMAP_SIGN_P6                                           = 0x07,
-      eREMAP_SIGN_P7                                           = 0x05
-    } eBNO055AxisRemap_sign_t;
-    typedef struct
-    {
-      uint8_t  accel_rev;
-      uint8_t  mag_rev;
-      uint8_t  gyro_rev;
-      uint16_t sw_rev;
-      uint8_t  bl_rev;
-    } DFRobotBNO055_ReInfo_t;
-/*
- * @brief init BNO055 device
- *
- * @return result
- *    ture : falid
- *    false : succussful
- */
-    bool init();
-/*
- * @brief set BNO055 mode
- *
- * @param  powerMode   Set power mode.
- *         dataRate    Set the data transfer rate.
- *
- */
-    void setMode(eBNO055PowerModes_t powerMode, eBNO055DataRateMode_t dataRate);
-    void setOpMode(eBNO055Mode_t opMode);
-/*
- * @brief  Read euler angles.
- *         The resulting data is stored in EulerAngles.
- *         For exmple: EulerAngles.x, EulerAngles.y, EulerAngles.z
- */
-    void readEuler(void);
-/*
- * @brief  Read angles velocity.
- *         The resulting data is stored in GyrData.
- *         For exmple: GyrData.x, GyrData.y, GyrData.z
- */
-    void readAngularVelocity(void);
-/*
- * @brief  Read linear acceleration.
- *         The resulting data is stored in LinAccData.
- *         For exmple: LinAccData.x, LinAccData.y, LinAccData.z
- */
-    void readLinAcc(void);
-/*
- * @brief  Read acceleration.
- *         The resulting data is stored in AccData.
- *         For exmple: AccData.x, AccData.y, AccData.z
- */
-    void readAcc(void);
-/*
- * @brief read quaternion data
- *         The resulting data is stored in QuaData.
- *         For exmple: QuaData.w, QuaData.x, QuaData.y, QuaData.z
- */
-    void readQua(void);
-/*
- * @brief  Uses last loaded QuaData and LinAccData.
- *         The resulting data is stored in AbsLinAccData.
- *         For exmple: AbsLinAccData.x, AbsLinAccData.y, AbsLinAccData.z
- */
-    void calcAbsLinAcc(void);
-    
-    void setAxisRemap(eBNO055AxisRemap_config_t remapcode );
-    void setAxisSign(eBNO055AxisRemap_sign_t remapsign );
-    void getRevInfo(DFRobotBNO055_ReInfo_t* );
-    void getInfo(void);
-    void getSystemStatus( uint8_t *system_status,uint8_t *self_result,uint8_t *system_error);
-    void getCalibration( uint8_t* system, uint8_t* gyro, uint8_t* accel, uint8_t* mag);
-    /* Functions to deal with raw calibration data */
-    bool getSensorOffsets(uint8_t* calibData);
-    bool getSensorOffsets(DFRobotBNO055_offsets_t &offsets_type);
-    void setSensorOffsets(const uint8_t* calibData);
-    void setSensorOffsets(const DFRobotBNO055_offsets_t &offsets_type);
-    bool isFullyCalibrated(void);
-    byte SystemStatusCode;
-    byte SelfTestStatus;
-    byte SystemError;
+  /**
+   * @brief global single axis declare
+   */
+  typedef enum {
+    eSingleAxisX,
+    eSingleAxisY,
+    eSingleAxisZ
+  } eSingleAxis_t;
 
-    typedef enum
-    {                                               /* DEFAULT    TYPE                  */
-        /*page0*/
-      eBNO055_REGISTER_CHIP_ID             = 0x00,   /* 0x00       r                     */
-      eBNO055_REGISTER_ACC_ID              = 0x01,   /* 0xFB       r                     */
-      eBNO055_REGISTER_MAG_ID              = 0x02,   /* 0x32       r                     */
-      eBNO055_REGISTER_GYR_ID              = 0x03,   /* 0x0F       r                     */
-      eBNO055_REGISTER_SW_REV_ID_LSB       = 0x04,   /*            r                     */
-      eBNO055_REGISTER_SW_REV_ID_MSB       = 0x05,   /*            r                     */
-      eBNO055_REGISTER_BL_REV_ID           = 0x06,   /*            r                     */
-      eBNO055_REGISTER_PAGE_ID             = 0x07,   /* 0x00       rw                    */
-      eBNO055_REGISTER_ACC_DATA_X_LSB      = 0x08,   /* 0x00       r                     */
-      eBNO055_REGISTER_ACC_DATA_X_MSB      = 0x09,   /* 0x00       r                     */
-      eBNO055_REGISTER_ACC_DATA_Y_LSB      = 0x0A,   /* 0x00       r                     */
-      eBNO055_REGISTER_ACC_DATA_Y_MSB      = 0x0B,   /* 0x00       r                     */
-      eBNO055_REGISTER_ACC_DATA_Z_LSB      = 0x0C,   /* 0x00       r                     */
-      eBNO055_REGISTER_ACC_DATA_Z_MSB      = 0x0D,   /* 0x00       r                     */
-      eBNO055_REGISTER_MAG_DATA_X_LSB      = 0x0E,   /* 0x00       r                     */
-      eBNO055_REGISTER_MAG_DATA_X_MSB      = 0x0F,   /* 0x00       r                     */
-      eBNO055_REGISTER_MAG_DATA_Y_LSB      = 0x10,   /* 0x00       r                     */
-      eBNO055_REGISTER_MAG_DATA_Y_MSB      = 0x11,   /* 0x00       r                     */
-      eBNO055_REGISTER_MAG_DATA_Z_LSB      = 0x12,   /* 0x00       r                     */
-      eBNO055_REGISTER_MAG_DATA_Z_MSB      = 0x13,   /* 0x00       r                     */
-      eBNO055_REGISTER_GYR_DATA_X_LSB      = 0x14,   /* 0x00       r                     */
-      eBNO055_REGISTER_GYR_DATA_X_MSB      = 0x15,   /* 0x00       r                     */
-      eBNO055_REGISTER_GYR_DATA_Y_LSB      = 0x16,   /* 0x00       r                     */
-      eBNO055_REGISTER_GYR_DATA_Y_MSB      = 0x17,   /* 0x00       r                     */
-      eBNO055_REGISTER_GYR_DATA_Z_LSB      = 0x18,   /* 0x00       r                     */
-      eBNO055_REGISTER_GYR_DATA_Z_MSB      = 0x19,   /* 0x00       r                     */
-      eBNO055_REGISTER_EUL_DATA_X_LSB      = 0x1A,   /* 0x00       r                     */
-      eBNO055_REGISTER_EUL_DATA_X_MSB      = 0x1B,   /* 0x00       r                     */
-      eBNO055_REGISTER_EUL_DATA_Y_LSB      = 0x1C,   /* 0x00       r                     */
-      eBNO055_REGISTER_EUL_DATA_Y_MSB      = 0x1D,   /* 0x00       r                     */
-      eBNO055_REGISTER_EUL_DATA_Z_LSB      = 0x1E,   /* 0x00       r                     */
-      eBNO055_REGISTER_EUL_DATA_Z_MSB      = 0x1F,   /* 0x00       r                     */
-      eBNO055_REGISTER_QUA_DATA_W_LSB      = 0x20,   /* 0x00       r                     */
-      eBNO055_REGISTER_QUA_DATA_W_MSB      = 0x21,   /* 0x00       r                     */
-      eBNO055_REGISTER_QUA_DATA_X_LSB      = 0x22,   /* 0x00       r                     */
-      eBNO055_REGISTER_QUA_DATA_X_MSB      = 0x23,   /* 0x00       r                     */
-      eBNO055_REGISTER_QUA_DATA_Y_LSB      = 0x24,   /* 0x00       r                     */
-      eBNO055_REGISTER_QUA_DATA_Y_MSB      = 0x25,   /* 0x00       r                     */
-      eBNO055_REGISTER_QUA_DATA_Z_LSB      = 0x26,   /* 0x00       r                     */
-      eBNO055_REGISTER_QUA_DATA_Z_MSB      = 0x27,   /* 0x00       r                     */
-      eBNO055_REGISTER_LIA_DATA_X_LSB      = 0x28,   /* 0x00       r                     */
-      eBNO055_REGISTER_LIA_DATA_X_MSB      = 0x29,   /* 0x00       r                     */
-      eBNO055_REGISTER_LIA_DATA_Y_LSB      = 0x2A,   /* 0x00       r                     */
-      eBNO055_REGISTER_LIA_DATA_Y_MSB      = 0x2B,   /* 0x00       r                     */
-      eBNO055_REGISTER_LIA_DATA_Z_LSB      = 0x2C,   /* 0x00       r                     */
-      eBNO055_REGISTER_LIA_DATA_Z_MSB      = 0x2D,   /* 0x00       r                     */
-      eBNO055_REGISTER_GRV_DATA_X_LSB      = 0x2E,   /* 0x00       r                     */
-      eBNO055_REGISTER_GRV_DATA_X_MSB      = 0x2F,   /* 0x00       r                     */
-      eBNO055_REGISTER_GRV_DATA_Y_LSB      = 0x30,   /* 0x00       r                     */
-      eBNO055_REGISTER_GRV_DATA_Y_MSB      = 0x31,   /* 0x00       r                     */
-      eBNO055_REGISTER_GRV_DATA_Z_LSB      = 0x32,   /* 0x00       r                     */
-      eBNO055_REGISTER_GRV_DATA_Z_MSB      = 0x33,   /* 0x00       r                     */
-      eBNO055_REGISTER_TEMP                = 0x34,   /* 0x00       r                     */
-      eBNO055_REGISTER_CALIB_STAT          = 0x35,   /* 0x00       r                     */
-      eBNO055_REGISTER_ST_RESULT           = 0x36,   /* xxxx1111   r                     */
-      eBNO055_REGISTER_INT_STA             = 0x37,   /* 000x00xx   r  pg74               */
-      eBNO055_REGISTER_SYS_CLK_STATUS      = 0x38,   /* 00000000   r  pg74               */
-      eBNO055_REGISTER_SYS_STATUS          = 0x39,   /* 00000000   r  pg74               */
-      eBNO055_REGISTER_SYS_ERR             = 0x3A,   /* 00000000   r  pg75               */
-      eBNO055_REGISTER_UNIT_SEL            = 0x3B,   /* 0xx0x000   rw pg76               */
-      eBNO055_REGISTER_OPR_MODE            = 0x3D,   /* x???????   rw pg77               */
-      eBNO055_REGISTER_PWR_MODE            = 0x3E,   /* xxxxxx??   rw pg78               */
-      eBNO055_REGISTER_SYS_TRIGGER         = 0x3F,   /* 000xxxx0   w  pg78               */
-      eBNO055_REGISTER_TEMP_SOURCE         = 0x40,   /* xxxxxx??   rw pg78               */
-      eBNO055_REGISTER_AXIS_MAP_CONFIG     = 0x41,   /* xx??????   rw pg79               */
-      eBNO055_REGISTER_AXIS_MAP_SIGN       = 0x42,   /* xxxxx???   rw pg79               */
-      eBNO055_REGISTER_SIC_MATRIX          = 0x43,   /* xxxxxx??   ?? pg80               */
-      eBNO055_REGISTER_ACC_OFFSET_X_LSB    = 0x55,   /* 0x00       rw                    */
-      eBNO055_REGISTER_ACC_OFFSET_X_MSB    = 0x56,   /* 0x00       rw                    */
-      eBNO055_REGISTER_ACC_OFFSET_Y_LSB    = 0x57,   /* 0x00       rw                    */
-      eBNO055_REGISTER_ACC_OFFSET_Y_MSB    = 0x58,   /* 0x00       rw                    */
-      eBNO055_REGISTER_ACC_OFFSET_Z_LSB    = 0x59,   /* 0x00       rw                    */
-      eBNO055_REGISTER_ACC_OFFSET_Z_MSB    = 0x5A,   /* 0x00       rw                    */
-      eBNO055_REGISTER_MAG_OFFSET_X_LSB    = 0x5B,   /* 0x00       rw                    */
-      eBNO055_REGISTER_MAG_OFFSET_X_MSB    = 0x5C,   /* 0x00       rw                    */
-      eBNO055_REGISTER_MAG_OFFSET_Y_LSB    = 0x5D,   /* 0x00       rw                    */
-      eBNO055_REGISTER_MAG_OFFSET_Y_MSB    = 0x5E,   /* 0x00       rw                    */
-      eBNO055_REGISTER_MAG_OFFSET_Z_LSB    = 0x5F,   /* 0x00       rw                    */
-      eBNO055_REGISTER_MAG_OFFSET_Z_MSB    = 0x60,   /* 0x00       rw                    */
-      eBNO055_REGISTER_GYR_OFFSET_X_LSB    = 0x61,   /* 0x00       rw                    */
-      eBNO055_REGISTER_GYR_OFFSET_X_MSB    = 0x62,   /* 0x00       rw                    */
-      eBNO055_REGISTER_GYR_OFFSET_Y_LSB    = 0x63,   /* 0x00       rw                    */
-      eBNO055_REGISTER_GYR_OFFSET_Y_MSB    = 0x64,   /* 0x00       rw                    */
-      eBNO055_REGISTER_GYR_OFFSET_Z_LSB    = 0x65,   /* 0x00       rw                    */
-      eBNO055_REGISTER_GYR_OFFSET_Z_MSB    = 0x66,   /* 0x00       rw                    */
-      eBNO055_REGISTER_ACC_RADIUS_LSB      = 0x67,   /* 0x00       rw                    */
-      eBNO055_REGISTER_ACC_RADIUS_MSB      = 0x68,   /* 0x00       rw                    */
-      eBNO055_REGISTER_MAG_RADIUS_LSB      = 0x69,   /* 0x00       rw                    */
-      eBNO055_REGISTER_MAG_RADIUS_MSB      = 0x6A,   /* 0x00       rw                    */
-        
-        
-        /*page 1*/
-        
-/*      eBNO055_REGISTER_PAGE_ID             = 0x07,   /* ??         rw see page0          */
-      eBNO055_REGISTER_ACC_CONFIG          = 0x08,   /* 00001101   rw pg87               */
-      eBNO055_REGISTER_MAG_CONFIG          = 0x09,   /* 00001011   rw pg87               */
-      eBNO055_REGISTER_GYR_CONFIG          = 0x0A,   /* 00111000   rw pg88               */
-      eBNO055_REGISTER_GYR_CONFIG_1        = 0x0B,   /* 00000000   rw pg88               */
-      eBNO055_REGISTER_ACC_SLEEP_CONFIG    = 0x0C,   /* ????????   rw pg89               */
-      eBNO055_REGISTER_GYR_SLEEP_CONFIG    = 0x0D,   /* ????????   rw pg90               */
-      eBNO055_REGISTER_INT_MSK             = 0x0F,   /* 000x00xx   rw pg91               */
-      eBNO055_REGISTER_INT_EN              = 0x10,   /* 000x00xx   rw pg92               */
-      eBNO055_REGISTER_ACC_AM_THRES        = 0x11,   /* 00010100   rw pg92               */
-      eBNO055_REGISTER_ACC_INT_SETTINGS    = 0x12,   /* 00000011   rw pg93               */
-      eBNO055_REGISTER_ACC_HG_DURATION     = 0x13,   /* 00001111   rw pg93               */
-      eBNO055_REGISTER_ACC_HG_THRES        = 0x14,   /* 11000000   rw pg93               */
-      eBNO055_REGISTER_ACC_NM_THRES        = 0x15,   /* 00001010   rw pg93               */
-      eBNO055_REGISTER_ACC_NM_SET          = 0x16,   /* x0001011   rw pg94               */
-      eBNO055_REGISTER_GYR_INT_SETTING     = 0x17,   /* 00000000   rw pg95               */
-      eBNO055_REGISTER_GYR_HR_X_SET        = 0x18,   /* 00000001   rw pg95               */
-      eBNO055_REGISTER_GYR_DUR_X           = 0x19,   /* 00011001   rw pg96               */
-      eBNO055_REGISTER_ACC_HR_Y_SET        = 0x1A,   /* 00000001   rw pg96               */
-      eBNO055_REGISTER_GYR_DUR_Y           = 0x1B,   /* 00011001   rw pg96               */
-      eBNO055_REGISTER_ACC_HR_Z_SET        = 0x1C,   /* 00000001   rw pg97               */
-      eBNO055_REGISTER_GYR_DUR_Z           = 0x1D,   /* 00011001   rw pg97               */
-      eBNO055_REGISTER_GYR_AM_THRES        = 0x1E,   /* 00000100   rw pg97               */
-      eBNO055_REGISTER_GYR_AM_SET          = 0x1F,   /* 00001010   rw pg98               */
-    } eBNO055Registers_t;
+  // registers ----------------------------------------------------------------
+  typedef struct {
+    uint8_t   MAG: 2;
+    uint8_t   ACC: 2;
+    uint8_t   GYR: 2;
+    uint8_t   SYS: 2;
+  } sRegCalibState_t;
 
-    typedef struct BNO055EulerData_s
-    {
-      float x;
-      float y;
-      float z;
-    } BNO055EulerData;
+  typedef enum {
+    eStResultFaild,
+    eStResultPassed
+  } eStResult_t;
 
-    typedef struct BNO055GyrData_s
-    {
-      float x;
-      float y;
-      float z;
-    } BNO055GyrData;
+  typedef struct {
+    uint8_t   ACC: 1;
+    uint8_t   MAG: 1;
+    uint8_t   GYR: 1;
+    uint8_t   MCU: 1;
+  } sRegStResult_t;
 
-    typedef struct BNO055LinAccData_s
-    {
-        float x;
-        float y;
-        float z;
-    } BNO055LinAccData;
-    
-    typedef struct BNO055QuaData_s
-    {
-        float w;
-        float x;
-        float y;
-        float z;
-    } BNO055QuaData;
-    
-    typedef struct BNO055AbsLinAccData_s
-    {
-        float x;
-        float y;
-        float z;
-    } BNO055AbsLinAccData;
-    
-    typedef struct BNO055AccData_s
-    {
-        float x;
-        float y;
-        float z;
-    } BNO055AccData;
+  /**
+   * @brief enum interrupt
+   */
+  typedef enum {
+    eIntGyrAm = 0x04,
+    eIntGyrHighRate = 0x08,
+    eIntAccHighG = 0x20,
+    eIntAccAm = 0x40,
+    eIntAccNm = 0x80,
+    eIntAll = 0xec
+  } eInt_t;
 
-    BNO055EulerData EulerAngles;
-    BNO055GyrData GyrData;
-    BNO055LinAccData LinAccData;
-    BNO055QuaData QuaData;
-    BNO055AbsLinAccData AbsLinAccData;
-    BNO055AccData AccData;
+  typedef struct {
+    uint8_t   reserved1: 2;
+    uint8_t   GYRO_AM: 1;
+    uint8_t   HYR_HIGH_RATE: 1;
+    uint8_t   reserved2: 1;
+    uint8_t   ACC_HIGH_G: 1;
+    uint8_t   ACC_AM: 1;
+    uint8_t   ACC_NM: 1;
+  } sRegIntSta_t;
 
-  private:
-    void writeByte(eBNO055Registers_t reg, byte value);
-    byte readByte(eBNO055Registers_t reg);
-    bool readByteLen(eBNO055Registers_t reg, byte * buffer, uint8_t len);
-    byte address;
-    eBNO055DataRateMode_t dataSpeed;
-    eBNO055Mode_t _mode;
-    byte message;
+  typedef struct {
+    uint8_t   ST_MAIN_CLK: 1;
+  } sRegSysClkStatus_t;
+
+  typedef struct {
+    uint8_t   ACC: 1;
+    uint8_t   GYR: 1;
+    uint8_t   EUL: 1;
+    uint8_t   reserved1: 1;
+    uint8_t   TEMP: 1;
+    uint8_t   reserved2: 2;
+    uint8_t   ORI_ANDROID_WINDOWS: 1;
+  } sRegUnitSel_t;
+
+  /**
+   * @brief Operation mode enum
+   */
+  typedef enum {
+    eOprModeConfig,
+    eOprModeAccOnly,
+    eOprModeMagOnly,
+    eOprModeGyroOnly,
+    eOprModeAccMag,
+    eOprModeAccGyro,
+    eOprModeMagGyro,
+    eOprModeAMG,
+    eOprModeImu,
+    eOprModeCompass,
+    eOprModeM4G,
+    eOprModeNdofFmcOff,
+    eOprModeNdof
+  } eOprMode_t;
+
+  typedef struct {
+    uint8_t   mode: 4;
+  } sRegOprMode_t;
+
+  /**
+   * @brief Poewr mode enum
+   */
+  typedef enum {
+    ePowerModeNormal,
+    ePowerModeLowPower,
+    ePowerModeSuspend
+  } ePowerMode_t;
+
+  typedef struct {
+    uint8_t   mode: 2;
+  } sRegPowerMode_t;
+
+  typedef struct {
+    uint8_t   SELF_TEST: 1;
+    uint8_t   reserved1: 4;
+    uint8_t   RST_SYS: 1;
+    uint8_t   RST_INT: 1;
+    uint8_t   CLK_SEL: 1;
+  } sRegSysTrigger_t;
+
+  typedef struct {
+    uint8_t   TEMP_SOURCE: 2;
+  } sRegTempSource_t;
+
+  typedef struct {
+    uint8_t   remappedXAxisVal: 2;
+    uint8_t   remappedYAxisVal: 2;
+    uint8_t   remappedZAxisVal: 2;
+  } sRegAxisMapConfig_t;
+
+  typedef struct {
+    uint8_t   remappedZAxisSign: 1;
+    uint8_t   remappedYAxisSign: 1;
+    uint8_t   remappedXAxisSign: 1;
+  } sRegAxisMapSign_t;
+
+  typedef struct {
+    int16_t   x, y, z;
+  } sAxisData_t;
+
+  /**
+   * @brief axis analog data struct
+   */
+  typedef struct {
+    float   x, y, z;
+  } sAxisAnalog_t;
+
+  /**
+   * @brief eular analog data struct
+   */
+  typedef struct {
+    float   head, roll, pitch;
+  } sEulAnalog_t;
+
+  typedef struct {
+    int16_t   head, roll, pitch;
+  } sEulData_t;
+
+  /**
+   * @brief qua analog data struct
+   */
+  typedef struct {
+    float   w, x, y, z;
+  } sQuaAnalog_t;
+
+  typedef struct {
+    int16_t   w, x, y, z;
+  } sQuaData_t;
+
+  typedef struct {
+    uint8_t   CHIP_ID;  // 0x00
+    #define   BNO055_REG_CHIP_ID_DEFAULT   0xa0
+    uint8_t   ACC_ID;
+    #define   BNO055_REG_ACC_ID_DEFAULT    0xfb
+    uint8_t   MAG_ID;
+    #define   BNO055_REG_MAG_ID_DEFAULT    0x32
+    uint8_t   GYR_ID;
+    #define   BNO055_REG_GYR_ID_DEFAULT    0x0f
+    uint16_t  SW_REV_ID;
+    #define   BNO055_REG_SW_REV_ID_DEFAULT 0x0308
+    uint8_t   BL_REV;
+    uint8_t   PAGE_ID;
+    sAxisData_t   ACC_DATA;
+    sAxisData_t   MAG_DATA;  // 0x0f
+    sAxisData_t   GYR_DATA;
+    sEulData_t    EUL_DATA;
+    sQuaData_t    QUA_DATA;  // 0x20
+    sAxisData_t   LIA_DATA;
+    sAxisData_t   GRV_DATA;  // 0x2f
+    uint8_t   TEMP;
+    sRegCalibState_t    CALIB_STATE;
+    sRegStResult_t      ST_RESULT;
+    sRegIntSta_t        INT_STA;
+    sRegSysClkStatus_t    SYS_CLK_STATUS;
+    uint8_t   SYS_STATUS;
+    uint8_t   SYS_ERR;
+    sRegUnitSel_t       UNIT_SEL;
+    uint8_t   reserved1;
+    sRegOprMode_t       OPR_MODE;
+    sRegPowerMode_t     PWR_MODE;
+    sRegSysTrigger_t    SYS_TRIGGER;
+    sRegTempSource_t    TEMP_SOURCE;  // 0x40
+    sRegAxisMapConfig_t AXIS_MAP_CONFIG;
+    sRegAxisMapSign_t   AXIS_MAP_SIGN;
+    uint8_t   reserved2[(0x54 - 0x43 + 1)];
+    sAxisData_t   ACC_OFFSET;  // 0x55
+    sAxisData_t   MAG_OFFSET;
+    sAxisData_t   GYR_OFFSET;  // 0x61
+    uint16_t  ACC_RADIUS;
+    uint16_t  MAG_RADIUS;
+  } sRegsPage0_t;
+
+  /**
+   * @brief enum accelerometer range, unit G
+   */
+  typedef enum {
+    eAccRange_2G,
+    eAccRange_4G,
+    eAccRange_8G,
+    eAccRange_16G
+  } eAccRange_t;
+
+  /**
+   * @brief enum accelerometer band width, unit HZ
+   */
+  typedef enum {
+    eAccBandWidth_7_81,    // 7.81HZ
+    eAccBandWidth_15_63,   // 16.63HZ
+    eAccBandWidth_31_25,
+    eAccBandWidth_62_5,
+    eAccBandWidth_125,
+    eAccBandWidth_250,
+    eAccBandWidth_500,
+    eAccBandWidth_1000
+  } eAccBandWidth_t;
+
+  /**
+   * @brief enum accelerometer power mode
+   */
+  typedef enum {
+    eAccPowerModeNormal,
+    eAccPowerModeSuspend,
+    eAccPowerModeLowPower1,
+    eAccPowerModeStandby,
+    eAccPowerModeLowPower2,
+    eAccPowerModeDeepSuspend
+  } eAccPowerMode_t;
+
+  typedef struct {
+    uint8_t   ACC_RANGE: 2;
+    uint8_t   ACC_BW: 3;
+    uint8_t   ACC_PWR_MODE: 3;
+  } sRegAccConfig_t;
+
+  /**
+   * @brief enum magnetometer data output rate, unit HZ
+   */
+  typedef enum {
+    eMagDataRate_2,
+    eMagDataRate_6,
+    eMagDataRate_8,
+    eMagDataRate_10,
+    eMagDataRate_15,
+    eMagDataRate_20,
+    eMagDataRate_25,
+    eMagDataRate_30
+  } eMagDataRate_t;
+
+  /**
+   * @brief enum magnetometer operation mode
+   */
+  typedef enum {
+    eMagOprModeLowPower,
+    eMagOprModeRegular,
+    eMagOprModeEnhancedRegular,
+    eMagOprModeHighAccuracy
+  } eMagOprMode_t;
+
+  /**
+   * @brief enum magnetometer power mode
+   */
+  typedef enum {
+    eMagPowerModeNormal,
+    eMagPowerModeSleep,
+    eMagPowerModeSuspend,
+    eMagPowerModeForce
+  } eMagPowerMode_t;
+
+  typedef struct {
+    uint8_t   MAG_DATA_OUTPUT_RATE: 3;
+    uint8_t   MAG_OPR_MODE: 2;
+    uint8_t   MAG_POWER_MODE: 2;
+  } sRegMagConfig_t;
+
+  /**
+   * @brief enum gyroscope range, unit dps
+   */
+  typedef enum {
+    eGyrRange_2000,
+    eGyrRange_1000,
+    eGyrRange_500,
+    eGyrRange_250,
+    eGyrRange_125
+  } eGyrRange_t;
+
+  /**
+   * @brief enum gyroscope band width, unit HZ
+   */
+  typedef enum {
+    eGyrBandWidth_523,
+    eGyrBandWidth_230,
+    eGyrBandWidth_116,
+    eGyrBandWidth_47,
+    eGyrBandWidth_23,
+    eGyrBandWidth_12,
+    eGyrBandWidth_64,
+    eGyrBandWidth_32
+  } eGyrBandWidth_t;
+
+  typedef struct {
+    uint8_t   GYR_RANGE: 3;
+    uint8_t   GYR_BANDWIDTH: 3;
+  } sRegGyrConfig0_t;
+
+  /**
+   * @brief enum gyroscope power mode
+   */
+  typedef enum {
+    eGyrPowerModeNormal,
+    eGyrPowerModeFastPowerUp,
+    eGyrPowerModeDeepSuspend,
+    eGyrPowerModeSuspend,
+    eGyrPowerModeAdvancedPowersave
+  } eGyrPowerMode_t;
+
+  typedef struct {
+    uint8_t   GYR_POWER_MODE: 3;
+  } sRegGyrConfig1_t;
+
+  typedef enum {
+    eAccSleepModeEventDriven,
+    eAccSleepModeEquidstantSampling
+  } eAccSleepMode_t;
+
+  typedef enum {
+    eAccSleepDuration_0_5 = 5,    // 0.5 ms
+    eAccSleepDuration_1,
+    eAccSleepDuration_2,
+    eAccSleepDuration_4,
+    eAccSleepDuration_6,
+    eAccSleepDuration_10,
+    eAccSleepDuration_25,
+    eAccSleepDuration_50,
+    eAccSleepDuration_100,
+    eAccSleepDuration_500,
+    eAccSleepDuration_1000
+  } eAccSleepDuration_t;
+
+  typedef struct {
+    uint8_t   SLP_MODE: 1;
+    uint8_t   SLP_DURATION: 4;
+  } sRegAccSleepConfig_t;
+
+  typedef enum {
+    eGyrSleepDuration_2,
+    eGyrSleepDuration_4,
+    eGyrSleepDuration_5,
+    eGyrSleepDuration_8,
+    eGyrSleepDuration_10,
+    eGyrSleepDuration_15,
+    eGyrSleepDuration_18,
+    eGyrSleepDuration_20
+  } eGyrSleepDuration_t;
+
+  typedef enum {
+    eGyrAutoSleepDuration_No,
+    eGyrAutoSleepDuration_4,
+    eGyrAutoSleepDuration_5,
+    eGyrAutoSleepDuration_8,
+    eGyrAutoSleepDuration_10,
+    eGyrAutoSleepDuration_15,
+    eGyrAutoSleepDuration_20,
+    eGyrAutoSleepDuration_40
+  } eGyrAutoSleepDuration_t;
+
+  typedef struct {
+    uint8_t   SLP_DURATION: 3;
+    uint8_t   AUTO_SLP_DURATION: 3;
+  } sRegGyrSleepConfig_t;
+
+  typedef struct {
+    uint8_t   reserved1: 2;
+    uint8_t   GYRO_AM: 1;
+    uint8_t   GYR_HIGH_RATE: 1;
+    uint8_t   reserved2: 1;
+    uint8_t   ACC_HIGH_G: 1;
+    uint8_t   ACC_AM: 1;
+    uint8_t   ACC_NM: 1;
+  } sRegIntMask_t;
+
+  typedef struct {
+    uint8_t   reserved1: 2;
+    uint8_t   GYRO_AM: 1;
+    uint8_t   GYR_HIGH_RATE: 1;
+    uint8_t   reserved2: 1;
+    uint8_t   ACC_HIGH_G: 1;
+    uint8_t   ACC_AM: 1;
+    uint8_t   ACC_NM: 1;
+  } sRegIntEn_t;
+
+  /**
+   * @brief Enum accelerometer interrupt settings
+   */
+  typedef enum {
+    eAccIntSetAmnmXAxis = (0x01 << 2),
+    eAccIntSetAmnmYAxis = (0x01 << 3),
+    eAccIntSetAmnmZAxis = (0x01 << 4),
+    eAccIntSetHgXAxis = (0x01 << 5),
+    eAccIntSetHgYAxis = (0x01 << 6),
+    eAccIntSetHgZAxis = (0x01 << 7),
+    eAccIntSetAll = 0xfc
+  } eAccIntSet_t;
+
+  typedef struct {
+    uint8_t   AM_DUR: 2;
+    uint8_t   AMNM_X_AXIS: 1;
+    uint8_t   AMNM_Y_AXIS: 1;
+    uint8_t   AMNM_Z_AXIS: 1;
+    uint8_t   HG_X_AXIS: 1;
+    uint8_t   HG_Y_AXIS: 1;
+    uint8_t   HG_Z_AXIS: 1;
+  } sRegAccIntSet_t;
+
+  /**
+   * @brief Enum accelerometer slow motion mode or no motion mode
+   */
+  typedef enum {
+    eAccNmSmnmSm,  // slow motion mode
+    eAccNmSmnmNm   // no motion mode
+  } eAccNmSmnm_t;
+
+  typedef struct {
+    uint8_t   SMNM: 2;
+    uint8_t   NO_SLOW_MOTION_DURATION: 5;
+  } sRegAccNmSet_t;
+
+  /**
+   * @brief Enum gyroscope interrupt settings
+   */
+  typedef enum {
+    eGyrIntSetAmXAxis = (0x01 << 0),
+    eGyrIntSetAmYAxis = (0x01 << 1),
+    eGyrIntSetAmZAxis = (0x01 << 2),
+    eGyrIntSetHrXAxis = (0x01 << 3),
+    eGyrIntSetHrYAxis = (0x01 << 4),
+    eGyrIntSetHrZAxis = (0x01 << 5),
+    eGyrIntSetAmFilt = (0x01 << 6),
+    eGyrIntSetHrFilt = (0x01 << 7),
+    eGyrIntSetAll = 0x3f
+  } eGyrIntSet_t;
+
+  typedef struct {
+    uint8_t   AM_X_AXIS: 1;
+    uint8_t   AM_Y_AXIS: 1;
+    uint8_t   AM_Z_AXIS: 1;
+    uint8_t   HR_X_AXIS: 1;
+    uint8_t   HR_Y_AXIS: 1;
+    uint8_t   HR_Z_AXIS: 1;
+    uint8_t   AM_FILT: 1;
+    uint8_t   HR_FILT: 1;
+  } sRegGyrIntSetting_t;
+
+  typedef struct {
+    uint8_t   HR_THRESHOLD: 5;
+    uint8_t   HR_THRES_HYST: 2;
+  } sRegGyrHrSet_t;
+
+  typedef struct {
+    uint8_t   GYRO_ANY_MOTION_THRESHOLD: 7;
+  } sRegGyrAmThres_t;
+
+  typedef struct {
+    uint8_t   SLOPE_SAMPLES: 2;
+    uint8_t   AWAKE_DURATION: 2;
+  } sRegGyrAmSet_t;
+
+  typedef uint8_t   UniqueId_t[(0x5f - 0x50 + 1)];
+
+  typedef struct {
+    uint8_t   reserved1[(0x06 - 0x00 + 1)];
+    uint8_t   PAGE_ID;  // 0x07
+    sRegAccConfig_t   ACC_CONFIG;
+    sRegMagConfig_t   MAG_CONFIG;
+    sRegGyrConfig0_t  GYR_CONFIG0;
+    sRegGyrConfig1_t  GYR_CONFIG1;
+    sRegAccSleepConfig_t    ACC_SLEEP;
+    sRegGyrSleepConfig_t    GYR_SLEEP;
+    uint8_t   reserved2;
+    sRegIntMask_t     INT_MASK;
+    sRegIntEn_t       INT_EN;  // 0x10
+    uint8_t   ACC_AM_THRES;
+    sRegAccIntSet_t    ACC_INT_SETTINGS;
+    uint8_t   ACC_HG_DURATION;
+    uint8_t   ACC_HG_THRES;
+    uint8_t   ACC_NM_THRES;
+    sRegAccNmSet_t    ACC_NM_SET;
+    sRegGyrIntSetting_t     GYR_INT_SETTING;
+    sRegGyrHrSet_t    GYR_HR_X_SET;
+    uint8_t   GYR_DUR_X;
+    sRegGyrHrSet_t    GYR_HR_Y_SET;
+    uint8_t   GYR_DUR_Y;
+    sRegGyrHrSet_t    GYR_HR_Z_SET;
+    uint8_t   GYR_DUR_Z;
+    sRegGyrAmThres_t  GYR_AM_THRES;
+    sRegGyrAmSet_t    GYR_AM_SET;  // 0x1f
+    uint8_t   reserved3[(0x4f - 0x20 + 1)];
+    UniqueId_t    UNIQUE_ID;  // 0x5f
+  } sRegsPage1_t;
+
+  /**
+   * @brief Declare sensor status
+   */
+  typedef enum {
+    eStatusOK,    // everything OK
+    eStatusErr,   // unknow error
+    eStatusErrDeviceNotDetect,    // device not detected
+    eStatusErrDeviceReadyTimeOut, // device ready time out
+    eStatusErrDeviceStatus,       // device internal status error
+    eStatusErrParameter           // function parameter error
+  } eStatus_t;
+
+// functions
+public:
+
+  DFRobot_BNO055();
+
+  /**
+   * @brief begin Sensor begin
+   * @return Sensor status
+   */
+  eStatus_t   begin();
+
+  /**
+   * @brief getAxisAnalog Get axis analog data
+   * @param eAxis One axis type from eAxis_t
+   * @return Struct sAxisAnalog_t, contains axis analog data, members unit depend on eAxis:
+   *                case eAxisAcc, unit mg
+   *                case eAxisLia, unit mg
+   *                case eAxisGrv, unit mg
+   *                case eAxisMag, unit ut
+   *                case eAxisGyr, unit dps
+   */
+  sAxisAnalog_t getAxis(eAxis_t eAxis);
+
+  /**
+   * @brief getEulAnalog Get euler analog data
+   * @return Struct sEulAnalog_t, contains euler analog data
+   */
+  sEulAnalog_t  getEul();
+
+  /**
+   * @brief getQuaAnalog Get quaternion analog data
+   * @return Struct sQuaAnalog_t, contains quaternion analog data
+   */
+  sQuaAnalog_t  getQua();
+
+  /**
+   * @brief setAccOffset Set axis offset data
+   * @param eAxis One axis type from eAxis_t, only support accelerometer, magnetometer and gyroscope
+   * @param sOffset Struct sAxisAnalog_t, contains axis analog data, members unit depend on eAxis:
+   *                case eAxisAcc, unit mg, members can't out of acc range
+   *                case eAxisMag, unit ut, members can't out of mag range
+   *                case eAxisGyr, unit dps, members can't out of gyr range
+   */
+  void    setAxisOffset(eAxis_t eAxis, sAxisAnalog_t sOffset);
+
+  /**
+   * @brief setOprMode Set operation mode
+   * @param eOpr One operation mode from eOprMode_t
+   */
+  void    setOprMode(eOprMode_t eMode);
+
+  /**
+   * @brief setPowerMode Set power mode
+   * @param eMode One power mode from ePowerMode_t
+   */
+  void    setPowerMode(ePowerMode_t eMode);
+
+  /**
+   * @brief Reset sensor
+   */
+  void    reset();
+
+  /**
+   * @brief setAccRange Set accelerometer measurement range, default value is 4g
+   * @param eRange One range enum from eAccRange_t
+   */
+  void    setAccRange(eAccRange_t eRange);
+
+  /**
+   * @brief setAccBandWidth Set accelerometer band width, default value is 62.5hz
+   * @param eBand One band enum from eAccBandWidth_t
+   */
+  void    setAccBandWidth(eAccBandWidth_t eBand);
+
+  /**
+   * @brief setAccPowerMode Set accelerometer power mode, default value is eAccPowerModeNormal
+   * @param eMode One mode enum from eAccPowerMode_t
+   */
+  void    setAccPowerMode(eAccPowerMode_t eMode);
+
+  /**
+   * @brief setMagDataRate Set magnetometer data output rate, default value is 20hz
+   * @param eRate One rate enum from eMagDataRate_t
+   */
+  void    setMagDataRate(eMagDataRate_t eRate);
+
+  /**
+   * @brief setMagOprMode Set magnetometer operation mode, default value is eMagOprModeRegular
+   * @param eMode One mode enum from eMagOprMode_t
+   */
+  void    setMagOprMode(eMagOprMode_t eMode);
+
+  /**
+   * @brief setMagPowerMode Set magnetometer power mode, default value is eMagePowerModeForce
+   * @param eMode One mode enum from eMagPowerMode_t
+   */
+  void    setMagPowerMode(eMagPowerMode_t eMode);
+
+  /**
+   * @brief setGyrRange Set gyroscope range, default value is 2000
+   * @param eRange One range enum from eGyrRange_t
+   */
+  void    setGyrRange(eGyrRange_t eRange);
+
+  /**
+   * @brief setGyrBandWidth Set gyroscope band width, default value is 32HZ
+   * @param eBandWidth One band width enum from eGyrBandWidth_t
+   */
+  void    setGyrBandWidth(eGyrBandWidth_t eBandWidth);
+
+  /**
+   * @brief setGyrPowerMode Set gyroscope power mode, default value is eGyrPowerModeNormal
+   * @param eMode One power mode enum from eGyrPowerMode_t
+   */
+  void    setGyrPowerMode(eGyrPowerMode_t eMode);
+
+  /**
+   * @brief getIntState Get interrupt state, interrupt auto clear after read
+   * @return If result > 0, at least one interrupt triggered. Result & eIntXXX (from eInt_t) to test is triggered
+   */
+  uint8_t   getIntState();
+
+  /**
+   * @brief setIntMask Set interrupt mask enable, there will generate a interrupt signal (raising) on INT pin if corresponding interrupt enabled
+   * @param eInt One or more interrupt flags to set, input them through operate or
+   */
+  void    setIntMaskEnable(eInt_t eInt);
+
+  /**
+   * @brief setIntMaskDisable Set corresponding interrupt mask disable
+   * @param eInt One or more interrupt flags to set, input them through operate or
+   */
+  void    setIntMaskDisable(eInt_t eInt);
+
+  /**
+   * @brief setIntEnEnable Set corresponding interrupt enable
+   * @param eInt One or more interrupt flags to set, input them through operate or
+   */
+  void    setIntEnable(eInt_t eInt);
+
+  /**
+   * @brief setIntEnDisable Set corresponding interrupt disable
+   * @param eInt One or more interrupt flags to set, input them through operate or
+   */
+  void    setIntDisable(eInt_t eInt);
+
+  /**
+   * @brief setAccAmThres Set accelerometer any motion threshold
+   * @param thres Threshold to set, unit mg, value is dependent on accelerometer range selected,
+   *        case 2g, no more than 1991
+   *        case 4g, no more than 3985
+   *        case 8g, no more than 7968
+   *        case 16g, no more than 15937
+   *        Attenion: The set value will be slightly biased according to datasheet
+   */
+  void    setAccAmThres(uint16_t thres);
+
+  /**
+   * @brief setAccIntDur Set accelerometer interrupt duration,
+   *        any motion interrupt triggers if duration (dur + 1) consecutive data points are above the any motion interrupt
+   *        threshold define in any motion threshold
+   * @param dur Duration to set, range form 1 to 4
+   */
+  void    setAccIntAmDur(uint8_t dur);
+
+  /**
+   * @brief setAccIntEnable Set accelerometer interrupt enable
+   * @param eInt One or more interrupt flags to set, input them through operate or
+   */
+  void    setAccIntEnable(eAccIntSet_t eInt);
+
+  /**
+   * @brief setAccIntDisable Set accelerometer interrupt disable
+   * @param eInt One or more interrupt flags to set, input them through operate or
+   */
+  void    setAccIntDisable(eAccIntSet_t eInt);
+
+  /**
+   * @brief setAccHighGDuration Set accelerometer high-g interrupt, the high-g interrupt delay according to [dur + 1] * 2 ms
+   * @param dur Duration from 2ms to 512ms
+   */
+  void    setAccHighGDuration(uint16_t dur);
+
+  /**
+   * @brief setAccHighGThres Set accelerometer high-g threshold
+   * @param thres Threshold to set, unit mg, value is dependent on accelerometer range selected,
+   *        case 2g, no more than 1991
+   *        case 4g, no more than 3985
+   *        case 8g, no more than 7968
+   *        case 16g, no more than 15937
+   *        Attenion: The set value will be slightly biased according to datasheet
+   */
+  void    setAccHighGThres(uint16_t thres);
+
+  /**
+   * @brief setAccNmThres Set accelerometer no motion threshold
+   * @param thres Threshold to set, unit mg, value is dependent on accelerometer range selected,
+   *        case 2g, no more than 1991
+   *        case 4g, no more than 3985
+   *        case 8g, no more than 7968
+   *        case 16g, no more than 15937
+   *        Attenion: The set value will be slightly biased according to datasheet
+   */
+  void    setAccNmThres(uint16_t thres);
+
+  /**
+   * @brief setAccNmSet Set accelerometer slow motion or no motion mode and duration
+   * @param eSmnm Enum of eAccNmSmnm_t
+   * @param dur Interrupt trigger delay (unit seconds), no more than 344.
+   *            Attenion: The set value will be slightly biased according to datasheet
+   */
+  void    setAccNmSet(eAccNmSmnm_t eSmnm, uint16_t dur);
+
+  /**
+   * @brief setGyrIntEnable Set corresponding gyroscope interrupt enable
+   * @param eInt One or more interrupt flags to set, input them through operate or
+   */
+  void    setGyrIntEnable(eGyrIntSet_t eInt);
+
+  /**
+   * @brief setGyrIntDisable Set corresponding gyroscope interrupt disable
+   * @param eInt One or more interrupt flags to set, input them through operate or
+   */
+  void    setGyrIntDisable(eGyrIntSet_t eInt);
+
+  /**
+   * @brief setGyrHrSet Set gyroscope high rate settings
+   * @param eSingleAxis Single axis to set
+   * @param thres High rate threshold to set, unit degree/seconds, value is dependent on gyroscope range selected,
+   *        case 2000, no more than 1937
+   *        case 1000, no more than 968
+   *        case 500, no more than 484
+   *        case 250, no more than 242
+   *        case 125, no more than 121
+   *        Attenion: The set value will be slightly biased according to datasheet
+   * @param dur High rate duration to set, unit ms, duration from 2.5ms to 640ms
+   *            Attenion: The set value will be slightly biased according to datasheet
+   */
+  void    setGyrHrSet(eSingleAxis_t eSingleAxis, uint16_t thres, uint16_t dur);
+
+  /**
+   * @brief setGyrAmThres Set gyroscope any motion threshold
+   * @param thres Threshold to set, unit mg, value is dependent on accelerometer range selected,
+   *        case 2000, no more than 128
+   *        case 1000, no more than 64
+   *        case 500, no more than 32
+   *        case 250, no more than 16
+   *        case 125, no more than 8
+   *        Attenion: The set value will be slightly biased according to datasheet
+   */
+  void    setGyrAmThres(uint8_t thres);
+
+protected:
+  virtual void readReg(uint8_t reg, uint8_t *pBuf, uint8_t len) = 0;
+  virtual void writeReg(uint8_t reg, uint8_t *pBuf, uint8_t len) = 0;
+
+  uint8_t   getReg(uint8_t reg, uint8_t pageId);
+  void      setToPage(uint8_t pageId);
+  void      setUnit();
+  void      writeRegBits(uint8_t reg, uint8_t flied, uint8_t val);
+  uint16_t  mapAccThres(uint16_t thres);
+  void      mapGyrHrThres(uint8_t *pHysteresis, uint16_t *pThres, uint16_t *pDur);
+  void      mapGyrAmThres(uint8_t *pThres);
+
+  sAxisData_t   getAxisRaw(eAxis_t eAxis);
+  sEulData_t    getEulRaw();
+  sQuaData_t    getQuaRaw();
+
+// variables ----------------------------------------------------------------
+public:
+  /**
+   * @brief lastOpreateStatus Show last operate status
+   */
+  eStatus_t   lastOpreateStatus;
+
+protected:
+  uint8_t   _currentPage;
+  eAccRange_t   _eAccRange;
+  eGyrRange_t   _eGyrRange;
+
+};
+
+
+// utils class ----------------------------------------------------------------
+
+class DFRobot_BNO055_IIC : public DFRobot_BNO055 {
+public:
+  /**
+   * @brief The eCom3State enum, sensor address is according to pin(com3) state
+   */
+  typedef enum {
+    eCom3Low,
+    eCom3High
+  } eCom3State_t;
+
+  /**
+   * @brief DFRobot_BNO055_IIC class constructor
+   * @param pWire select One TwoWire peripheral
+   * @param eState pin com3 state
+   */
+  DFRobot_BNO055_IIC(TwoWire *pWire, eCom3State_t eState);
+
+protected:
+  void    readReg(uint8_t reg, uint8_t *pBuf, uint8_t len);
+  void    writeReg(uint8_t reg, uint8_t *pBuf, uint8_t len);
+
+protected:
+  TwoWire   *_pWire;
+  uint8_t   _addr;
+
 };
 
 #endif
