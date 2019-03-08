@@ -43,7 +43,11 @@ void setup()
   }
   Serial.println("bno begin success");
 
+  bno.setPowerMode(BNO::ePowerModeNormal);    // set to normal power mode
   bno.setOprMode(BNO::eOprModeConfig);    // must set sensor to config-mode before configure
+  bno.setAccPowerMode(BNO::eAccPowerModeNormal);    // set acc to normal power mode
+  bno.setGyrPowerMode(BNO::eGyrPowerModeNormal);    // set gyr to normal power mode
+  bno.setMagPowerMode(BNO::eMagPowerModeForce);     // set mag to force power mode
 
   // accelerometer normal configure
   bno.setAccRange(BNO::eAccRange_4G);   // set range
@@ -77,7 +81,6 @@ void setup()
   bno.setAxisOffset(BNO::eAxisGyr, sOffsetGyr);
 
   bno.setOprMode(BNO::eOprModeNdof);   // shift to other operate mode, reference datasheet for more detail
-  delay(50);    // wait before operate mode shift done
 }
 
 #define printAxisData(sAxis) \
@@ -90,15 +93,25 @@ void setup()
 
 void loop()
 {
-  BNO::sAxisAnalog_t   sAccAnalog, sMagAnalog, sGyrAnalog;
+  BNO::sAxisAnalog_t   sAccAnalog, sMagAnalog, sGyrAnalog, sLiaAnalog, sGrvAnalog;
+  BNO::sEulAnalog_t    sEulAnalog;
+  BNO::sQuaAnalog_t    sQuaAnalog;
   sAccAnalog = bno.getAxis(BNO::eAxisAcc);
   sMagAnalog = bno.getAxis(BNO::eAxisMag);
   sGyrAnalog = bno.getAxis(BNO::eAxisGyr);
+  sLiaAnalog = bno.getAxis(BNO::eAxisLia);
+  sGrvAnalog = bno.getAxis(BNO::eAxisGrv);
+  sEulAnalog = bno.getEul();
+  sQuaAnalog = bno.getQua();
   Serial.println();
   Serial.println("======== analog data print start ========");
   Serial.print("acc analog: (unit mg)       "); printAxisData(sAccAnalog);
   Serial.print("mag analog: (unit ut)       "); printAxisData(sMagAnalog);
   Serial.print("gyr analog: (unit dps)      "); printAxisData(sGyrAnalog);
+  Serial.print("lia analog: (unit mg)       "); printAxisData(sLiaAnalog);
+  Serial.print("grv analog: (unit mg)       "); printAxisData(sGrvAnalog);
+  Serial.print("eul analog: (unit degree)   "); Serial.print(" head: "); Serial.print(sEulAnalog.head); Serial.print(" roll: "); Serial.print(sEulAnalog.roll);  Serial.print(" pitch: "); Serial.println(sEulAnalog.pitch);
+  Serial.print("qua analog: (no unit)       "); Serial.print(" w: "); Serial.print(sQuaAnalog.w); printAxisData(sQuaAnalog);
   Serial.println("========  analog data print end  ========");
 
   delay(1000);

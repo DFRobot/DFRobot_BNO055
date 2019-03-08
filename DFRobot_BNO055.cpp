@@ -38,9 +38,9 @@ const DFRobot_BNO055::sRegsPage1_t PROGMEM    sRegsPage1 = DFRobot_BNO055::sRegs
 
 #define __DBG   0
 #if __DBG
-# define __DBG(x)   Serial.print("__DBG: "); Serial.print(__FUNCTION__); Serial.print(" "); Serial.print(__LINE__); Serial.print(" "); x; Serial.println()
+# define __DBG_CODE(x)   Serial.print("__DBG_CODE: "); Serial.print(__FUNCTION__); Serial.print(" "); Serial.print(__LINE__); Serial.print(" "); x; Serial.println()
 #else
-# define __DBG(x)
+# define __DBG_CODE(x)
 #endif
 
 #define writeRegBitsHelper(pageId, reg, flied, val) \
@@ -54,7 +54,7 @@ DFRobot_BNO055::DFRobot_BNO055() { lastOpreateStatus = eStatusOK; _currentPage =
 DFRobot_BNO055::eStatus_t DFRobot_BNO055::begin()
 {
   uint8_t   temp = getReg(regOffset0(sRegsPage0.CHIP_ID), 0);  // get chip id
-  __DBG(Serial.print("CHIP_ID: "); Serial.print(temp, HEX));
+  __DBG_CODE(Serial.print("CHIP_ID: "); Serial.print(temp, HEX));
   if((lastOpreateStatus == eStatusOK) && (temp == BNO055_REG_CHIP_ID_DEFAULT)) {
     uint8_t   timeOut = 0;
     reset();
@@ -207,6 +207,7 @@ void DFRobot_BNO055::setOprMode(eOprMode_t eMode)
   sRegOprMode_t   sRegFlied = {0}, sRegVal = {0};
   sRegFlied.mode = 0xff; sRegVal.mode = eMode;
   writeRegBitsHelper(0, sRegsPage0.OPR_MODE, sRegFlied, sRegVal);
+  delay(50);    // wait before operate mode shift done
 }
 
 void DFRobot_BNO055::setPowerMode(ePowerMode_t eMode)
@@ -274,6 +275,11 @@ void DFRobot_BNO055::setGyrRange(eGyrRange_t eRange)
   writeRegBitsHelper(1, sRegsPage1.GYR_CONFIG0, sRegFlied, sRegVal);
   if(lastOpreateStatus == eStatusOK)
     _eGyrRange = eRange;
+
+#if __DBG
+  readReg(regOffset1(sRegsPage1.GYR_CONFIG0), (uint8_t*) &sRegFlied, sizeof(sRegFlied));
+  __DBG_CODE(Serial.print("gyr range: "); Serial.print(sRegFlied.GYR_RANGE, HEX));
+#endif
 }
 
 void DFRobot_BNO055::setGyrBandWidth(eGyrBandWidth_t eBandWidth)
@@ -296,7 +302,7 @@ uint8_t DFRobot_BNO055::getIntState()
   sRegSysTrigger_t    sTrigFlied, sTrigVal;
   setToPage(0);
   readReg(regOffset0(sRegsPage0.INT_STA), (uint8_t*) &sInt, sizeof(sInt));
-  __DBG(Serial.print("int state: "); Serial.print(*(uint8_t*) &sInt, HEX));
+  __DBG_CODE(Serial.print("int state: "); Serial.print(*(uint8_t*) &sInt, HEX));
 
   sTrigFlied.RST_INT = 0xff; sTrigVal.RST_INT = 1;
   writeRegBitsHelper(0, sRegsPage0.SYS_TRIGGER, sTrigFlied, sTrigVal);
@@ -474,7 +480,7 @@ void DFRobot_BNO055::setGyrHrSet(eSingleAxis_t eSingleAxis, uint16_t thres, uint
   uint8_t   temp = dur;
   sReg.HR_THRESHOLD = thres;
   sReg.HR_THRES_HYST = hysteresis;
-  __DBG(Serial.print("thresHold: "); Serial.print(sReg.HR_THRESHOLD); Serial.print(" reg addr: "); Serial.print(reg, HEX));
+  __DBG_CODE(Serial.print("thresHold: "); Serial.print(sReg.HR_THRESHOLD); Serial.print(" reg addr: "); Serial.print(reg, HEX));
   writeReg(reg, (uint8_t*) &sReg, sizeof(sReg));
   writeReg(reg + 1, (uint8_t*) &temp, sizeof(temp));
 }

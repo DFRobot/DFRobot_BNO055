@@ -133,10 +133,10 @@ void setup()
   bno.setGyrAmThres(20);
 
   bno.setOprMode(BNO::eOprModeNdof);    // configure done
-  delay(50);                            // wait before operate mode shift done
 
-  bno.getIntState();    // clear unexpected interrupt
   attachInterrupt(0, intHandle, RISING);   // attach interrupt
+  bno.getIntState();    // clear unexpected interrupt
+  intFlag = false;
 }
 
 void loop()
