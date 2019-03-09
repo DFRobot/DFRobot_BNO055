@@ -837,7 +837,7 @@ public:
   /**
    * @brief lastOpreateStatus Show last operate status
    */
-  eStatus_t   lastOpreateStatus;
+  eStatus_t   lastOperateStatus;
 
 protected:
   uint8_t   _currentPage;

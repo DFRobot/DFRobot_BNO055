@@ -49,13 +49,13 @@ const DFRobot_BNO055::sRegsPage1_t PROGMEM    sRegsPage1 = DFRobot_BNO055::sRegs
 
 // main class start ----------------------------------------------------------------
 
-DFRobot_BNO055::DFRobot_BNO055() { lastOpreateStatus = eStatusOK; _currentPage = 0xff; }
+DFRobot_BNO055::DFRobot_BNO055() { lastOperateStatus = eStatusOK; _currentPage = 0xff; }
 
 DFRobot_BNO055::eStatus_t DFRobot_BNO055::begin()
 {
   uint8_t   temp = getReg(regOffset0(sRegsPage0.CHIP_ID), 0);  // get chip id
   __DBG_CODE(Serial.print("CHIP_ID: "); Serial.print(temp, HEX));
-  if((lastOpreateStatus == eStatusOK) && (temp == BNO055_REG_CHIP_ID_DEFAULT)) {
+  if((lastOperateStatus == eStatusOK) && (temp == BNO055_REG_CHIP_ID_DEFAULT)) {
     uint8_t   timeOut = 0;
     reset();
     do {
@@ -64,7 +64,7 @@ DFRobot_BNO055::eStatus_t DFRobot_BNO055::begin()
       timeOut ++;
     } while((temp != 0) && (timeOut < 50));
     if(timeOut == 50)
-      lastOpreateStatus = eStatusErrDeviceReadyTimeOut;
+      lastOperateStatus = eStatusErrDeviceReadyTimeOut;
     else {
       setOprMode(eOprModeConfig);
       setUnit();
@@ -75,8 +75,8 @@ DFRobot_BNO055::eStatus_t DFRobot_BNO055::begin()
       delay(50);
     }
   } else
-    lastOpreateStatus = eStatusErrDeviceNotDetect;
-  return lastOpreateStatus;
+    lastOperateStatus = eStatusErrDeviceNotDetect;
+  return lastOperateStatus;
 }
 
 // get data functions ----------------------------------------------------------------
@@ -109,7 +109,7 @@ DFRobot_BNO055::sAxisAnalog_t DFRobot_BNO055::getAxis(eAxis_t eAxis)
   case eAxisMag: factor = 16.0f; break;
   // shift gyroscope data: 1dps = 16lsb, 1rps = 900lsb
   case eAxisGyr: factor = 16.0f; break;
-  default: lastOpreateStatus = eStatusErrParameter; break;
+  default: lastOperateStatus = eStatusErrParameter; break;
   }
   sAnalog.x = sRaw.x / factor;
   sAnalog.y = sRaw.y / factor;
@@ -183,15 +183,15 @@ void DFRobot_BNO055::setAxisOffset(eAxis_t eAxis, sAxisAnalog_t sOffset)
     case eGyrRange_125: maxValue = 125; break;
     }
   } break;
-  default: lastOpreateStatus = eStatusErrParameter; break;
+  default: lastOperateStatus = eStatusErrParameter; break;
   }
   if(eAxis == eAxisGyr) {
     if((offset == 0) || (abs(sOffset.x) > maxValue) || (abs(sOffset.y) > maxValue) || (abs(sOffset.z) > 2500)) {
-      lastOpreateStatus = eStatusErrParameter;
+      lastOperateStatus = eStatusErrParameter;
       return;
     }
   } else if((offset == 0) || (abs(sOffset.x) > maxValue) || (abs(sOffset.y) > maxValue) || (abs(sOffset.z) > maxValue)) {
-    lastOpreateStatus = eStatusErrParameter;
+    lastOperateStatus = eStatusErrParameter;
     return;
   }
   sAxisData_t   sAxisData;
@@ -229,7 +229,7 @@ void DFRobot_BNO055::setAccRange(eAccRange_t eRange)
   sRegAccConfig_t   sRegFlied = {0}, sRegVal = {0};
   sRegFlied.ACC_RANGE = 0xff; sRegVal.ACC_RANGE = eRange;
   writeRegBitsHelper(1, sRegsPage1.ACC_CONFIG, sRegFlied, sRegVal);
-  if(lastOpreateStatus == eStatusOK)
+  if(lastOperateStatus == eStatusOK)
     _eAccRange = eRange;
 }
 
@@ -273,7 +273,7 @@ void DFRobot_BNO055::setGyrRange(eGyrRange_t eRange)
   sRegGyrConfig0_t    sRegFlied = {0}, sRegVal = {0};
   sRegFlied.GYR_RANGE = 0xff; sRegVal.GYR_RANGE = eRange;
   writeRegBitsHelper(1, sRegsPage1.GYR_CONFIG0, sRegFlied, sRegVal);
-  if(lastOpreateStatus == eStatusOK)
+  if(lastOperateStatus == eStatusOK)
     _eGyrRange = eRange;
 
 #if __DBG
@@ -348,7 +348,7 @@ void DFRobot_BNO055::setIntDisable(eInt_t eInt)
 void DFRobot_BNO055::setAccAmThres(uint16_t thres)
 {
   uint8_t   temp = mapAccThres(thres);
-  if(lastOpreateStatus != eStatusOK)
+  if(lastOperateStatus != eStatusOK)
     return;
   writeReg(regOffset1(sRegsPage1.ACC_AM_THRES), (uint8_t*) &temp, sizeof(temp));
 }
@@ -357,7 +357,7 @@ void DFRobot_BNO055::setAccIntAmDur(uint8_t dur)
 {
   sRegAccIntSet_t    sRegFleid = {0}, sRegVal = {0};
   if((dur > 4) || (dur << 1)) {
-    lastOpreateStatus = eStatusErrParameter;
+    lastOperateStatus = eStatusErrParameter;
     return;
   }
   sRegFleid.AM_DUR = 0xff; sRegVal.AM_DUR = dur - 1;
@@ -385,7 +385,7 @@ void DFRobot_BNO055::setAccIntDisable(eAccIntSet_t eInt)
 void DFRobot_BNO055::setAccHighGDuration(uint16_t dur)
 {
   if((dur < 2) || (dur > 512)) {
-    lastOpreateStatus = eStatusErrParameter;
+    lastOperateStatus = eStatusErrParameter;
     return;
   }
   uint8_t   temp = dur / 2;
@@ -396,7 +396,7 @@ void DFRobot_BNO055::setAccHighGDuration(uint16_t dur)
 void DFRobot_BNO055::setAccHighGThres(uint16_t thres)
 {
   uint8_t   temp = mapAccThres(thres);
-  if(lastOpreateStatus != eStatusOK)
+  if(lastOperateStatus != eStatusOK)
     return;
   writeReg(regOffset1(sRegsPage1.ACC_HG_THRES), (uint8_t*) &temp, sizeof(temp));
 }
@@ -404,7 +404,7 @@ void DFRobot_BNO055::setAccHighGThres(uint16_t thres)
 void DFRobot_BNO055::setAccNmThres(uint16_t thres)
 {
   uint8_t   temp = mapAccThres(thres);
-  if(lastOpreateStatus != eStatusOK)
+  if(lastOperateStatus != eStatusOK)
     return;
   writeReg(regOffset1(sRegsPage1.ACC_NM_THRES), (uint8_t*) &temp, sizeof(temp));
 }
@@ -414,7 +414,7 @@ void DFRobot_BNO055::setAccNmSet(eAccNmSmnm_t eSmnm, uint16_t dur)
   sRegAccNmSet_t    sReg;
   uint8_t   temp = 0;
   if(dur > 336) {
-    lastOpreateStatus = eStatusErrParameter;
+    lastOperateStatus = eStatusErrParameter;
     return;
   }
   sReg.SMNM = eSmnm;
@@ -472,7 +472,7 @@ void DFRobot_BNO055::setGyrHrSet(eSingleAxis_t eSingleAxis, uint16_t thres, uint
   uint8_t   hysteresis = 1;
   mapGyrHrThres(&hysteresis, &thres, &dur);
   hysteresis = 0;   // function not yet understood, temporarily used 1
-  if(lastOpreateStatus != eStatusOK)
+  if(lastOperateStatus != eStatusOK)
     return;
   uint8_t   reg = regOffset1(sRegsPage1.GYR_HR_X_SET);    // get reg offset head
   reg += eSingleAxis * 2;                                 // calculate offset
@@ -488,7 +488,7 @@ void DFRobot_BNO055::setGyrHrSet(eSingleAxis_t eSingleAxis, uint16_t thres, uint
 void DFRobot_BNO055::setGyrAmThres(uint8_t thres)
 {
   mapGyrAmThres(&thres);
-  if(lastOpreateStatus != eStatusOK)
+  if(lastOperateStatus != eStatusOK)
     return;
   setToPage(1);
   writeReg(regOffset1(sRegsPage1.GYR_AM_THRES), (uint8_t*) &thres, sizeof(thres));
@@ -508,7 +508,7 @@ void DFRobot_BNO055::setToPage(uint8_t pageId)
 {
   if(_currentPage != pageId) {
     writeReg(regOffset0(sRegsPage0.PAGE_ID), &pageId, sizeof(pageId));
-    if(lastOpreateStatus == eStatusOK) {
+    if(lastOperateStatus == eStatusOK) {
       _currentPage = pageId;
     }
   }
@@ -551,28 +551,28 @@ uint16_t DFRobot_BNO055::mapAccThres(uint16_t thres)
   sRegAccConfig_t   sReg;
   setToPage(1);
   readReg(regOffset1(sRegsPage1.ACC_CONFIG), (uint8_t*) &sReg, sizeof(sReg));
-  if(lastOpreateStatus != eStatusOK)
+  if(lastOperateStatus != eStatusOK)
     return 0;
   switch(sReg.ACC_RANGE) {
   case eAccRange_2G: {
-    if(thres > (255.0f * 3.91f)) { lastOpreateStatus = eStatusErrParameter; }
+    if(thres > (255.0f * 3.91f)) { lastOperateStatus = eStatusErrParameter; }
     else { thres /= 3.91f; }
   } break;
   case eAccRange_4G: {
-    if(thres > (255.0f * 7.81f)) { lastOpreateStatus = eStatusErrParameter; }
+    if(thres > (255.0f * 7.81f)) { lastOperateStatus = eStatusErrParameter; }
     else { thres /= 7.81f; }
   } break;
   case eAccRange_8G: {
-    if(thres > (255.0f * 15.63f)) { lastOpreateStatus = eStatusErrParameter; }
+    if(thres > (255.0f * 15.63f)) { lastOperateStatus = eStatusErrParameter; }
     else { thres /= 15.63f; }
   } break;
   case eAccRange_16G: {
-    if(thres > (255.0f * 31.25f)) { lastOpreateStatus = eStatusErrParameter; }
+    if(thres > (255.0f * 31.25f)) { lastOperateStatus = eStatusErrParameter; }
     else { thres /= 31.25f; }
   } break;
-  default: lastOpreateStatus = eStatusErrParameter; break;
+  default: lastOperateStatus = eStatusErrParameter; break;
   }
-  if(lastOpreateStatus == eStatusErrParameter)
+  if(lastOperateStatus == eStatusErrParameter)
     return 0;
   return thres;
 }
@@ -607,16 +607,16 @@ void DFRobot_BNO055::mapGyrHrThres(uint8_t *pHysteresis, uint16_t *pThres, uint1
   sRegGyrConfig0_t    sReg;
   setToPage(1);
   readReg(regOffset1(sRegsPage1.GYR_CONFIG0), (uint8_t*) &sReg, sizeof(sReg));
-  if(lastOpreateStatus != eStatusOK)
+  if(lastOperateStatus != eStatusOK)
     return;
   if((*pDur < 3) || (*pDur > 640)) {
-    lastOpreateStatus = eStatusErrParameter;
+    lastOperateStatus = eStatusErrParameter;
     return;
   }
   switch(sReg.GYR_RANGE) {
   case eGyrRange_2000: {
     if((*pHysteresis > (62.26f * 3.0f)) || (*pThres > (62.5f * 31.0f)))
-      lastOpreateStatus = eStatusErrParameter;
+      lastOperateStatus = eStatusErrParameter;
     else {
       *pHysteresis /= 62.26f;
       *pThres /= 62.5f;
@@ -624,7 +624,7 @@ void DFRobot_BNO055::mapGyrHrThres(uint8_t *pHysteresis, uint16_t *pThres, uint1
   } break;
   case eGyrRange_1000: {
     if((*pHysteresis > (31.13f * 3.0f)) || (*pThres > (31.25f * 31.0f)))
-      lastOpreateStatus = eStatusErrParameter;
+      lastOperateStatus = eStatusErrParameter;
     else {
       *pHysteresis /= 31.13f;
       *pThres /= 31.25f;
@@ -632,7 +632,7 @@ void DFRobot_BNO055::mapGyrHrThres(uint8_t *pHysteresis, uint16_t *pThres, uint1
   } break;
   case eGyrRange_500: {
     if((*pHysteresis > (15.56f * 3.0f)) || (*pThres > (15.625f * 31.0f)))
-      lastOpreateStatus = eStatusErrParameter;
+      lastOperateStatus = eStatusErrParameter;
     else {
       *pHysteresis /= 15.56f;
       *pThres /= 3.0f;
@@ -640,7 +640,7 @@ void DFRobot_BNO055::mapGyrHrThres(uint8_t *pHysteresis, uint16_t *pThres, uint1
   } break;
   case eGyrRange_250: {
     if((*pHysteresis > (7.78f * 3.0f)) || (*pThres > (7.8125f * 31.0f)))
-      lastOpreateStatus = eStatusErrParameter;
+      lastOperateStatus = eStatusErrParameter;
     else {
       *pHysteresis /= 7.78f;
       *pThres /= 7.8125f;
@@ -648,15 +648,15 @@ void DFRobot_BNO055::mapGyrHrThres(uint8_t *pHysteresis, uint16_t *pThres, uint1
   } break;
   case eGyrRange_125: {
     if((*pHysteresis > (3.89f * 3.0f)) || (*pThres > (3.90625f * 31.0f)))
-      lastOpreateStatus = eStatusErrParameter;
+      lastOperateStatus = eStatusErrParameter;
     else {
       *pHysteresis /= 3.89f;
       *pThres /= 3.0f;
     }
   } break;
-  default: lastOpreateStatus = eStatusErrParameter; break;
+  default: lastOperateStatus = eStatusErrParameter; break;
   }
-  if(lastOpreateStatus != eStatusErrParameter)
+  if(lastOperateStatus != eStatusErrParameter)
     *pDur /= 2.5f;
 }
 
@@ -677,7 +677,7 @@ void DFRobot_BNO055::mapGyrAmThres(uint8_t *pThres)
   sRegGyrConfig0_t    sReg;
   setToPage(1);
   readReg(regOffset1(sRegsPage1.GYR_CONFIG0), (uint8_t*) &sReg, sizeof(sReg));
-  if(lastOpreateStatus != eStatusOK)
+  if(lastOperateStatus != eStatusOK)
     return;
   switch(sReg.GYR_RANGE) {
   case eGyrRange_2000: if(*pThres < (128.0f * 1.0f)) { *pThres /= 1.0f; } break;
@@ -694,7 +694,7 @@ DFRobot_BNO055::sAxisData_t DFRobot_BNO055::getAxisRaw(eAxis_t eAxis)
   sAxisData_t   sAxis = {0};
   setToPage(0);
   if(offset == 0)
-    lastOpreateStatus = eStatusErrParameter;
+    lastOperateStatus = eStatusErrParameter;
   else
     readReg(offset, (uint8_t*) &sAxis, sizeof(sAxis));
   return sAxis;
@@ -731,7 +731,7 @@ DFRobot_BNO055_IIC::DFRobot_BNO055_IIC(TwoWire *pWire, eCom3State_t eState)
 
 void DFRobot_BNO055_IIC::readReg(uint8_t reg, uint8_t *pBuf, uint8_t len)
 {
-  lastOpreateStatus = eStatusErrDeviceNotDetect;
+  lastOperateStatus = eStatusErrDeviceNotDetect;
   _pWire->begin();
   _pWire->beginTransmission(_addr);
   _pWire->write(reg);
@@ -741,12 +741,12 @@ void DFRobot_BNO055_IIC::readReg(uint8_t reg, uint8_t *pBuf, uint8_t len)
   _pWire->requestFrom(_addr, len);
   for(uint8_t i = 0; i < len; i ++)
     pBuf[i] = _pWire->read();
-  lastOpreateStatus = eStatusOK;
+  lastOperateStatus = eStatusOK;
 }
 
 void DFRobot_BNO055_IIC::writeReg(uint8_t reg, uint8_t *pBuf, uint8_t len)
 {
-  lastOpreateStatus = eStatusErrDeviceNotDetect;
+  lastOperateStatus = eStatusErrDeviceNotDetect;
   _pWire->begin();
   _pWire->beginTransmission(_addr);
   _pWire->write(reg);
@@ -754,7 +754,7 @@ void DFRobot_BNO055_IIC::writeReg(uint8_t reg, uint8_t *pBuf, uint8_t len)
     _pWire->write(pBuf[i]);
   if(_pWire->endTransmission() != 0)
     return;
-  lastOpreateStatus = eStatusOK;
+  lastOperateStatus = eStatusOK;
 }
 
 // utils class end ----------------------------------------------------------------
