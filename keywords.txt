@@ -159,7 +159,7 @@ eCom3State_t	LITERAL1
 
 DFRobot_BNO055_IIC	KEYWORD1
 BNO	KEYWORD1
-lastOpreateStatus	KEYWORD1
+lastOperateStatus	KEYWORD1
 
 begin	KEYWORD1
 getAxis	KEYWORD1
