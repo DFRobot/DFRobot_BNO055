@@ -67,6 +67,7 @@ DFRobot_BNO055::eStatus_t DFRobot_BNO055::begin()
       lastOperateStatus = eStatusErrDeviceReadyTimeOut;
     else {
       setOprMode(eOprModeConfig);
+      delay(50);
       setUnit();
       setAccRange(eAccRange_4G);
       setGyrRange(eGyrRange_2000);
@@ -720,13 +721,10 @@ DFRobot_BNO055::sQuaData_t DFRobot_BNO055::getQuaRaw()
 
 // utils class start ----------------------------------------------------------------
 
-DFRobot_BNO055_IIC::DFRobot_BNO055_IIC(TwoWire *pWire, eCom3State_t eState)
+DFRobot_BNO055_IIC::DFRobot_BNO055_IIC(TwoWire *pWire, uint8_t addr)
 {
   _pWire = pWire;
-  if(eState == eCom3High)
-    _addr = 0x29;  // sensor default address
-  else
-    _addr = 0x28;
+  _addr = addr;
 }
 
 void DFRobot_BNO055_IIC::readReg(uint8_t reg, uint8_t *pBuf, uint8_t len)

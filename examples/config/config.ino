@@ -17,7 +17,7 @@
 
 typedef DFRobot_BNO055_IIC    BNO;    // ******** use abbreviations instead of full names ********
 
-BNO   bno(&Wire, BNO::eCom3Low);    // pin com3 is low
+BNO   bno(&Wire, 0x28);    // input TwoWire interface and IIC address
 
 // show last sensor operate status
 void printLastOperateStatus(BNO::eStatus_t eStatus)
@@ -50,12 +50,12 @@ void setup()
   bno.setMagPowerMode(BNO::eMagPowerModeForce);     // set mag to force power mode
 
   // accelerometer normal configure
-  bno.setAccRange(BNO::eAccRange_4G);   // set range
-  bno.setAccBandWidth(BNO::eAccBandWidth_62_5);   // set band width
-  bno.setAccPowerMode(BNO::eAccPowerModeNormal);  // set power mode
+  bno.setAccRange(BNO::eAccRange_4G);   // set range to 4g
+  bno.setAccBandWidth(BNO::eAccBandWidth_62_5);   // set band width 62.5HZ
+  bno.setAccPowerMode(BNO::eAccPowerModeNormal);  // set accelerometer power mode
 
   // magnetometer normal configure
-  bno.setMagDataRate(BNO::eMagDataRate_20);   // set output data rate
+  bno.setMagDataRate(BNO::eMagDataRate_20);   // set output data rate 20HZ
   bno.setMagPowerMode(BNO::eMagPowerModeForce);   // set power mode
   bno.setMagOprMode(BNO::eMagOprModeRegular); // set operate mode
 

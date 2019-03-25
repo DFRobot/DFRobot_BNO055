@@ -18,7 +18,7 @@
 
 typedef DFRobot_BNO055_IIC    BNO;    // ******** use abbreviations instead of full names ********
 
-BNO   bno(&Wire, BNO::eCom3Low);    // pin com3 is low
+BNO   bno(&Wire, 0x28);    // input TwoWire interface and IIC address
 
 // show last sensor operate status
 void printLastOperateStatus(BNO::eStatus_t eStatus)

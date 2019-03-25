@@ -864,7 +864,7 @@ public:
    * @param pWire select One TwoWire peripheral
    * @param eState pin com3 state
    */
-  DFRobot_BNO055_IIC(TwoWire *pWire, eCom3State_t eState);
+  DFRobot_BNO055_IIC(TwoWire *pWire, uint8_t addr);
 
 protected:
   void    readReg(uint8_t reg, uint8_t *pBuf, uint8_t len);
