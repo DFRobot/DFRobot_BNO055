@@ -143,9 +143,9 @@ void loop()
 {
   if(intFlag) {
     intFlag = false;
-    Serial.println("interrupt detected");
-
     uint8_t   intSta = bno.getIntState();   // interrupt auto clear after read
+
+    Serial.println("interrupt detected");
     if(intSta & BNO::eIntAccAm)
       Serial.println("accelerometer any motion detected");
     if(intSta & BNO::eIntAccNm)

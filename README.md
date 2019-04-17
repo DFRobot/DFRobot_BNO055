@@ -524,20 +524,13 @@ public:
 
 class DFRobot_BNO055_IIC : public DFRobot_BNO055 {
 public:
-  /**
-   * @brief The eCom3State enum, sensor address is according to pin(com3) state
-   */
-  typedef enum {
-    eCom3Low,
-    eCom3High
-  } eCom3State_t;
 
   /**
    * @brief DFRobot_BNO055_IIC class constructor
    * @param pWire select One TwoWire peripheral
-   * @param eState pin com3 state
+   * @param addr Sensor address
    */
-  DFRobot_BNO055_IIC(TwoWire *pWire, eCom3State_t eState);
+  DFRobot_BNO055_IIC(TwoWire *pWire, uint8_t addr);
 };
 
 ```
