@@ -26,14 +26,14 @@ const DFRobot_BNO055::sRegsPage1_t PROGMEM    sRegsPage1 = DFRobot_BNO055::sRegs
 #ifdef __AVR__
 typedef uint16_t    platformBusWidth_t;
 #else
-typedef uint32_t    platformBusWisth_t;
+typedef uint32_t    platformBusWidth_t;
 #endif
 
 // use regOffset0 to get register offset in reg page0, regOffset1 similar
-const platformBusWisth_t    regsPage0Addr = (platformBusWisth_t) & sRegsPage0;
-const platformBusWisth_t    regsPage1Addr = (platformBusWisth_t) & sRegsPage1;
-#define regOffset0(reg) ( (platformBusWisth_t) (& (reg)) - regsPage0Addr )
-#define regOffset1(reg) ( (platformBusWisth_t) (& (reg)) - regsPage1Addr )
+const platformBusWidth_t    regsPage0Addr = (platformBusWidth_t) & sRegsPage0;
+const platformBusWidth_t    regsPage1Addr = (platformBusWidth_t) & sRegsPage1;
+#define regOffset0(reg) ( (platformBusWidth_t) (& (reg)) - regsPage0Addr )
+#define regOffset1(reg) ( (platformBusWidth_t) (& (reg)) - regsPage1Addr )
 
 #define __DBG   0
 #if __DBG
