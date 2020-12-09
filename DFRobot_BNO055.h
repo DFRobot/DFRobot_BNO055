@@ -3,14 +3,14 @@
 
  Copyright (C) <2019> <@DFRobot Frank>
 
-¡¡Permission is hereby granted, free of charge, to any person obtaining a copy of this
-¡¡software and associated documentation files (the "Software"), to deal in the Software
-¡¡without restriction, including without limitation the rights to use, copy, modify,
-¡¡merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
-¡¡permit persons to whom the Software is furnished to do so.
+ï¿½ï¿½Permission is hereby granted, free of charge, to any person obtaining a copy of this
+ï¿½ï¿½software and associated documentation files (the "Software"), to deal in the Software
+ï¿½ï¿½without restriction, including without limitation the rights to use, copy, modify,
+ï¿½ï¿½merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+ï¿½ï¿½permit persons to whom the Software is furnished to do so.
 
-¡¡The above copyright notice and this permission notice shall be included in all copies or
-¡¡substantial portions of the Software.
+ï¿½ï¿½The above copyright notice and this permission notice shall be included in all copies or
+ï¿½ï¿½substantial portions of the Software.
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
  INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
  PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE
@@ -158,15 +158,17 @@ public:
   } sRegTempSource_t;
 
   typedef struct {
-    uint8_t   remappedXAxisVal: 2;
-    uint8_t   remappedYAxisVal: 2;
-    uint8_t   remappedZAxisVal: 2;
+    //uint8_t   remappedXAxisVal: 2;
+    //uint8_t   remappedYAxisVal: 2;
+    //uint8_t   remappedZAxisVal: 2;
+    uint8_t   remappedAxisConfig: 6;
   } sRegAxisMapConfig_t;
 
   typedef struct {
-    uint8_t   remappedZAxisSign: 1;
-    uint8_t   remappedYAxisSign: 1;
-    uint8_t   remappedXAxisSign: 1;
+    //uint8_t   remappedZAxisSign: 1;
+    //uint8_t   remappedYAxisSign: 1;
+    //uint8_t   remappedXAxisSign: 1;
+    uint8_t  remappedAxisSign: 3;
   } sRegAxisMapSign_t;
 
   typedef struct {
@@ -244,6 +246,29 @@ public:
     uint16_t  ACC_RADIUS;
     uint16_t  MAG_RADIUS;
   } sRegsPage0_t;
+
+
+  typedef enum {
+    eMapSign_P1,
+    eMapSign_P5,
+    eMapSign_P3,
+    eMapSign_P4,
+    eMapSign_P0,
+    eMapSign_P7,
+    eMapSign_P2,
+    eMapSign_P6,
+  } eMapSign_t;
+
+  typedef enum {
+    eMapConfig_P0 = 0x21,
+    eMapConfig_P1 = 0x24,
+    eMapConfig_P2 = 0x24,
+    eMapConfig_P3 = 0x21,
+    eMapConfig_P4 = 0x24,
+    eMapConfig_P5 = 0x21,
+    eMapConfig_P6 = 0x21,
+    eMapConfig_P7 = 0x24,
+  } eMapConfig_t;
 
   /**
    * @brief enum accelerometer range, unit G
@@ -564,6 +589,19 @@ public:
     eStatusErrParameter           // function parameter error
   } eStatus_t;
 
+
+
+  /** Remap Signs **/
+  typedef enum {
+    REMAP_SIGN_P0 = 0x04,
+    REMAP_SIGN_P1 = 0x00, // default
+    REMAP_SIGN_P2 = 0x06,
+    REMAP_SIGN_P3 = 0x02,
+    REMAP_SIGN_P4 = 0x03,
+    REMAP_SIGN_P5 = 0x01,
+    REMAP_SIGN_P6 = 0x07,
+    REMAP_SIGN_P7 = 0x05
+  } eRemap_sign_t;
 // functions
 public:
 
@@ -598,6 +636,12 @@ public:
    * @return Struct sQuaAnalog_t, contains quaternion analog data
    */
   sQuaAnalog_t  getQua();
+
+
+
+  void    setAxisMapSign(eMapSign_t eSign); 
+
+  void    setAxisMapConfig(eMapConfig_t eConfig); 
 
   /**
    * @brief setAccOffset Set axis offset data

@@ -66,6 +66,7 @@ DFRobot_BNO055::eStatus_t DFRobot_BNO055::begin()
       lastOperateStatus = eStatusErrDeviceReadyTimeOut;
     else {
       setOprMode(eOprModeConfig);
+      setAxisMapConfig(eMapConfig_P1);
       delay(50);
       setUnit();
       setAccRange(eAccRange_4G);
@@ -78,6 +79,7 @@ DFRobot_BNO055::eStatus_t DFRobot_BNO055::begin()
     lastOperateStatus = eStatusErrDeviceNotDetect;
   return lastOperateStatus;
 }
+
 
 // get data functions ----------------------------------------------------------------
 
@@ -93,6 +95,8 @@ uint8_t getOffsetOfData(DFRobot_BNO055::eAxis_t eAxis)
   default: return 0;
   }
 }
+
+
 
 DFRobot_BNO055::sAxisAnalog_t DFRobot_BNO055::getAxis(eAxis_t eAxis)
 {
@@ -200,6 +204,22 @@ void DFRobot_BNO055::setAxisOffset(eAxis_t eAxis, sAxisAnalog_t sOffset)
   sAxisData.z = sOffset.z * factor;
   setToPage(0);
   writeReg(offset, (uint8_t*) &sAxisData, sizeof(sAxisData));
+}
+
+
+
+void DFRobot_BNO055::setAxisMapSign(eMapSign_t eSign){
+  sRegAxisMapSign_t   sRegFlied = {0}, sRegVal = {0};
+  sRegFlied.remappedAxisSign = 0xff; sRegVal.remappedAxisSign = eSign;
+  writeRegBitsHelper(0, sRegsPage0.AXIS_MAP_SIGN, sRegFlied, sRegVal);
+  delay(10);
+}
+
+void DFRobot_BNO055::setAxisMapConfig(eMapConfig_t eConfig){
+  sRegAxisMapConfig_t   sRegFlied = {0}, sRegVal = {0};
+  sRegFlied.remappedAxisConfig = 0xff; sRegVal.remappedAxisConfig = eConfig;
+  writeRegBitsHelper(0, sRegsPage0.AXIS_MAP_CONFIG, sRegFlied, sRegVal);
+  delay(10);
 }
 
 void DFRobot_BNO055::setOprMode(eOprMode_t eMode)
@@ -520,7 +540,7 @@ void DFRobot_BNO055::setUnit()
   sReg.ACC = 1;   // 0: m/s^2, 1: mg
   sReg.EUL = 0;   // 0: degrees, 1: radians
   sReg.GYR = 0;   // 0: dps, 1: rps
-  sReg.ORI_ANDROID_WINDOWS = 0;   // 0: windows, 1: android
+  sReg.ORI_ANDROID_WINDOWS = 1;   // 0: windows, 1: android
   sReg.TEMP = 0;  // 0: celsius, 1: fahrenheit
   setToPage(0);
   writeReg(regOffset0(sRegsPage0.UNIT_SEL), (uint8_t*) &sReg, sizeof(sReg));
