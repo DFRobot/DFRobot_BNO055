@@ -84,6 +84,15 @@ DFRobot_BNO055::eStatus_t DFRobot_BNO055::begin()
 
 // get data functions ----------------------------------------------------------------
 
+// get calibration status registers
+DFRobot_BNO055::sRegCalibState_t DFRobot_BNO055::getCalStatus()
+{
+  sRegCalibState_t    sRegCal = {0};
+  setToPage(0);
+  readReg(regOffset0(sRegsPage0.CALIB_STATE), (uint8_t*) &sRegCal, sizeof(sRegCal));
+  return sRegCal;
+}
+
 // get register offset of raw data
 uint8_t getOffsetOfData(DFRobot_BNO055::eAxis_t eAxis)
 {

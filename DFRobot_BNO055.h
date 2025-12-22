@@ -614,6 +614,12 @@ public:
   eStatus_t   begin();
 
   /**
+   * @brief getCalStatus Get calibration status register
+   * @return Struct sRegCalibState_t, contains calibration status register values
+   */
+  sRegCalibState_t getCalStatus();
+  
+  /**
    * @brief getAxisAnalog Get axis analog data
    * @param eAxis One axis type from eAxis_t
    * @return Struct sAxisAnalog_t, contains axis analog data, members unit depend on eAxis:
