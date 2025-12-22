@@ -866,6 +866,19 @@ public:
    */
   void    setGyrAmThres(uint8_t thres);
 
+  /**
+   * @brief setGyrIntAmDur Set gyroscope any motion interrupt awake duration
+   * @param dur Duration to set, range from 1 to 4
+   *            1=8 samples, 2=16 samples, 3=32 samples, 4=64 samples
+   */
+  void setGyrIntAmDur(uint8_t dur);
+
+  /**
+   * @brief setGyrIntAmSlope Set gyroscope any motion interrupt slope samples
+   * @param slope Number of samples to evaluate (0-3): 0=4 samples, 1=8 samples, 2=16 samples, 3=32 samples
+   */
+  void setGyrIntAmSlope(uint8_t slope);
+
 protected:
   virtual void readReg(uint8_t reg, uint8_t *pBuf, uint8_t len) = 0;
   virtual void writeReg(uint8_t reg, uint8_t *pBuf, uint8_t len) = 0;
