@@ -65,6 +65,7 @@ DFRobot_BNO055::eStatus_t DFRobot_BNO055::begin()
     if(timeOut == 100)
       lastOperateStatus = eStatusErrDeviceReadyTimeOut;
     else {
+      delay(100);
       setOprMode(eOprModeConfig);
       setAxisMapConfig(eMapConfig_P1);
       delay(50);
@@ -242,6 +243,7 @@ void DFRobot_BNO055::reset()
   sRegSysTrigger_t    sRegFlied = {0}, sRegVal = {0};
   sRegFlied.RST_SYS = 0xff; sRegVal.RST_SYS = 1;
   writeRegBitsHelper(0, sRegsPage0.SYS_TRIGGER, sRegFlied, sRegVal);
+  delay(500);
 }
 
 void DFRobot_BNO055::setAccRange(eAccRange_t eRange)
@@ -518,7 +520,7 @@ void DFRobot_BNO055::setGyrAmThres(uint8_t thres)
 
 uint8_t DFRobot_BNO055::getReg(uint8_t reg, uint8_t pageId)
 {
-  uint8_t   temp;
+  uint8_t   temp=1;
   setToPage(pageId);
   readReg(reg, &temp, sizeof(temp));
   return temp;
@@ -744,6 +746,7 @@ DFRobot_BNO055_IIC::DFRobot_BNO055_IIC(TwoWire *pWire, uint8_t addr)
 {
   _pWire = pWire;
   _addr = addr;
+  _pWire->setClock(100000);
 }
 
 void DFRobot_BNO055_IIC::readReg(uint8_t reg, uint8_t *pBuf, uint8_t len)
