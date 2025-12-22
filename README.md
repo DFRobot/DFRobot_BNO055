@@ -517,6 +517,25 @@ public:
   void    setGyrAmThres(uint8_t thres);
 
   /**
+   * @brief getCalStatus Get calibration status register
+   * @return Struct sRegCalibState_t, contains calibration status register values
+   */
+  sRegCalibState_t getCalStatus();
+
+  /**
+   * @brief setGyrIntAmDur Set gyroscope any motion interrupt awake duration
+   * @param dur Duration to set, range from 1 to 4
+   *            1=8 samples, 2=16 samples, 3=32 samples, 4=64 samples
+   */
+  void setGyrIntAmDur(uint8_t dur);
+
+  /**
+   * @brief setGyrIntAmSlope Set gyroscope any motion interrupt slope samples
+   * @param slope Number of samples to evaluate (0-3): 0=4 samples, 1=8 samples, 2=16 samples, 3=32 samples
+   */
+  void setGyrIntAmSlope(uint8_t slope);
+
+  /**
    * @brief lastOpreateStatus Show last operate status
    */
   eStatus_t   lastOpreateStatus;
@@ -546,6 +565,8 @@ Arduino uno |       √      |             |            |
 ## History
 
 - 07/03/2019 - Version 0.2 released.
+- 12/22/2019 - Version 0.2.1 released.
 ## About this Driver ##
 
 Written by Frank [jiehan.guo@dfrobot.com](#jiehan.guo@dfrobot.com)
+Written by LR [rong.li@dfrobot.com](#jrong.li@dfrobot.com)
